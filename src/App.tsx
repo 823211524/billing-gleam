@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import ConsumerLogin from "./pages/consumer/Login";
 import AdminLogin from "./pages/admin/Login";
+import ConsumerRegister from "./pages/consumer/Register";
+import ConsumerDashboard from "./pages/consumer/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +21,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/consumer/login" element={<ConsumerLogin />} />
+            <Route path="/consumer/register" element={<ConsumerRegister />} />
+            <Route path="/consumer/dashboard" element={<ConsumerDashboard />} />
             <Route path="/admin/login" element={<AdminLogin />} />
           </Routes>
         </BrowserRouter>
