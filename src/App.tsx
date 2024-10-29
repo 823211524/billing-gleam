@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import ConsumerLogin from "./pages/consumer/Login";
 import AdminLogin from "./pages/admin/Login";
+import AdminDashboard from "./pages/admin/Dashboard";
 import ConsumerRegister from "./pages/consumer/Register";
 import ConsumerDashboard from "./pages/consumer/Dashboard";
 
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/consumer/register" element={<ConsumerRegister />} />
             <Route path="/consumer/dashboard" element={<ConsumerDashboard />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Routes>
         </BrowserRouter>
       </div>
