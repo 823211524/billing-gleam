@@ -5,11 +5,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, User, FileText, Upload, AlertCircle, Home, LogOut } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
+const formSchema = z.object({
+  meterReading: z.string().min(1, "Meter reading is required"),
+});
 
 const Dashboard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      meterReading: "",
+    },
+  });
 
   const handleLogout = () => {
     // TODO: Implement actual logout logic (clear session, etc.)
@@ -20,7 +36,7 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>, meterReading: string) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -42,16 +58,17 @@ const Dashboard = () => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
 
-      // TODO: Implement actual photo upload with location data
+      // TODO: Implement actual photo upload with location data and QR code validation
       console.log("Photo:", file);
       console.log("Location:", {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       });
+      console.log("Meter Reading:", meterReading);
 
       toast({
         title: "Success",
-        description: "Meter reading uploaded successfully",
+        description: "Meter reading uploaded successfully. Once validated, your bill will be sent to your email.",
       });
     } catch (error) {
       toast({
@@ -61,6 +78,7 @@ const Dashboard = () => {
       });
     } finally {
       setIsUploading(false);
+      form.reset();
     }
   };
 
@@ -108,7 +126,7 @@ const Dashboard = () => {
               <CardHeader>
                 <CardTitle>Upload Meter Reading</CardTitle>
                 <CardDescription>
-                  Take a clear photo of your electricity meter
+                  Take a clear photo of your electricity meter and enter the reading
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -118,29 +136,52 @@ const Dashboard = () => {
                     <p className="font-medium">Important:</p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>Ensure the meter display is clearly visible</li>
+                      <li>Make sure the meter's QR code is visible in the photo</li>
                       <li>Allow location access when prompted</li>
                       <li>Photo must be taken within the submission window</li>
                     </ul>
                   </div>
                 </div>
 
-                <div className="flex justify-center">
-                  <Button
-                    disabled={isUploading}
-                    className="relative"
-                    size="lg"
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handlePhotoUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                <Form {...form}>
+                  <form className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="meterReading"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Meter Reading</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter the meter reading" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the current reading shown on your meter
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <Upload className="w-4 h-4 mr-2" />
-                    {isUploading ? "Uploading..." : "Take Meter Photo"}
-                  </Button>
-                </div>
+
+                    <div className="flex justify-center">
+                      <Button
+                        disabled={isUploading}
+                        className="relative"
+                        size="lg"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.capture = 'environment';
+                          input.onchange = (e) => handlePhotoUpload(e as any, form.getValues('meterReading'));
+                          input.click();
+                        }}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {isUploading ? "Uploading..." : "Take Meter Photo"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </CardContent>
             </Card>
           </TabsContent>
