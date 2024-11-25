@@ -5,6 +5,9 @@ export interface User {
   email: string;
   address: string;
   role: 'ADMIN' | 'CONSUMER';
+  isEnabled: boolean;
+  disabledAt: Date | null;
+  secretWord?: string;
 }
 
 export interface Meter {
@@ -13,6 +16,7 @@ export interface Meter {
   latitude: number;
   qrCode: string;
   consumerId?: number;
+  isEnabled: boolean;
 }
 
 export interface Reading {

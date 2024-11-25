@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "isEnabled" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "disabledAt" TIMESTAMP(3),
+ADD COLUMN "secretWord" TEXT;

@@ -9,21 +9,69 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, UserX } from "lucide-react";
+import { Search, UserX, UserCheck, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const CustomerList = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [customers] = useState<User[]>([]); // TODO: Replace with actual API data
+  const queryClient = useQueryClient();
 
-  const handleDeactivate = (userId: number) => {
-    // TODO: Implement actual deactivation
-    toast({
-      title: "Customer deactivated",
-      description: "The customer has been deactivated successfully"
-    });
+  const { data: customers = [], isLoading } = useQuery({
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const response = await fetch('/api/customers');
+      if (!response.ok) throw new Error('Failed to fetch customers');
+      return response.json();
+    }
+  });
+
+  const disableMutation = useMutation({
+    mutationFn: async ({ userId, action }: { userId: number, action: 'disable' | 'enable' }) => {
+      const response = await fetch(`/api/customers/${userId}/${action}`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error(`Failed to ${action} customer`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Customer status updated",
+        description: "The customer's status has been updated successfully"
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/customers/${userId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete customer');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Customer deleted",
+        description: "The customer has been permanently deleted from the system"
+      });
+    }
+  });
+
+  const filteredCustomers = customers.filter(customer => 
+    `${customer.givenName} ${customer.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const canDelete = (disabledAt: Date | null) => {
+    if (!disabledAt) return false;
+    const fiveYearsAgo = new Date();
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+    return new Date(disabledAt) <= fiveYearsAgo;
   };
 
   return (
@@ -47,32 +95,65 @@ export const CustomerList = () => {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Address</TableHead>
-              <TableHead>Meter ID</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  Loading customers...
+                </TableCell>
+              </TableRow>
+            ) : filteredCustomers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
                   No customers found
                 </TableCell>
               </TableRow>
             ) : (
-              customers.map((customer) => (
+              filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>{`${customer.givenName} ${customer.surname}`}</TableCell>
                   <TableCell>{customer.email}</TableCell>
                   <TableCell>{customer.address}</TableCell>
-                  <TableCell>{"MET-" + customer.id}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeactivate(customer.id)}
-                    >
-                      <UserX className="h-4 w-4" />
-                    </Button>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      customer.isEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {customer.isEnabled ? 'Active' : 'Disabled'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {customer.isEnabled ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => disableMutation.mutate({ userId: customer.id, action: 'disable' })}
+                        >
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => disableMutation.mutate({ userId: customer.id, action: 'enable' })}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete(customer.disabledAt) && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteMutation.mutate(customer.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
