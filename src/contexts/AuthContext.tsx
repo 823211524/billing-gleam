@@ -21,20 +21,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      // Query the users table directly to check credentials
       const { data, error } = await supabase
         .from('users')
         .select('id, email, role, password_hash, is_enabled')
         .eq('email', email);
 
       if (error) {
-        console.error('Database error:', error);
         toast.error("An error occurred while logging in");
         return;
       }
 
       if (!data || data.length === 0) {
-        toast.error("Invalid email or password");
+        toast.error("Invalid credentials");
         return;
       }
 
@@ -45,13 +43,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // Compare the provided password with the stored password_hash
+      // In a real production environment, you would use proper password hashing
       if (user.password_hash !== password) {
-        toast.error("Invalid email or password");
+        toast.error("Invalid credentials");
         return;
       }
 
-      // Set authentication state
       setIsAuthenticated(true);
       setIsAdmin(user.role === 'ADMIN');
       setUser({
