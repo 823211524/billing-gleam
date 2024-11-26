@@ -1,18 +1,33 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
 import { UserCheck } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    // TODO: Implement actual authentication
+    if (email && password) {
+      toast({
+        title: "Admin login successful",
+        description: "Welcome back, administrator",
+      });
+      navigate("/admin/dashboard");
+    } else {
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
