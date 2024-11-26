@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
+  user: { id: number; email: string; role: string } | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -15,19 +16,24 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<{ id: number; email: string; role: string } | null>(null);
   const navigate = useNavigate();
 
   const login = async (email: string, password: string) => {
     try {
-      // First check if user exists and get their role
-      const { data: user, error: userError } = await supabase
+      const { data: user, error } = await supabase
         .from('users')
-        .select('role, password_hash')
+        .select('id, email, role, password_hash, is_enabled')
         .eq('email', email)
         .single();
 
-      if (userError || !user) {
+      if (error || !user) {
         toast.error("Invalid credentials");
+        return;
+      }
+
+      if (!user.is_enabled) {
+        toast.error("This account has been disabled");
         return;
       }
 
@@ -39,7 +45,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setIsAuthenticated(true);
       setIsAdmin(user.role === 'ADMIN');
-      
+      setUser({
+        id: user.id,
+        email: user.email,
+        role: user.role
+      });
+
       // Redirect based on role
       if (user.role === 'ADMIN') {
         navigate('/admin/dashboard');
@@ -56,12 +67,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setIsAuthenticated(false);
     setIsAdmin(false);
+    setUser(null);
     navigate('/');
     toast.success("Logged out successfully");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isAdmin, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

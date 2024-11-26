@@ -4,12 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 const ConsumerLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, isAuthenticated, isAdmin } = useAuth();
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to={isAdmin ? "/admin/dashboard" : "/consumer/dashboard"} />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +39,7 @@ const ConsumerLogin = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -43,6 +49,7 @@ const ConsumerLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="w-full"
               />
             </div>
             <Button className="w-full" type="submit">
