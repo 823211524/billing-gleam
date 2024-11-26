@@ -5,28 +5,60 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { UserCheck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual authentication
-    if (email && password) {
+    setIsLoading(true);
+
+    try {
+      // First, check if the email matches the admin email
+      if (email !== 'bbmatlho@idm.ac.bw') {
+        throw new Error('Invalid administrator credentials');
+      }
+
+      // Query the users table to verify credentials
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('role', 'ADMIN')
+        .single();
+
+      if (error || !user) {
+        throw new Error('Invalid administrator credentials');
+      }
+
+      // Verify the password using Supabase auth
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        throw new Error('Invalid administrator credentials');
+      }
+
       toast({
         title: "Admin login successful",
         description: "Welcome back, administrator",
       });
       navigate("/admin/dashboard");
-    } else {
+    } catch (error) {
       toast({
         title: "Login failed",
-        description: "Please check your credentials",
+        description: error instanceof Error ? error.message : "Invalid administrator credentials",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,6 +80,7 @@ const AdminLogin = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -57,10 +90,17 @@ const AdminLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
-            <Button className="w-full" type="submit" variant="secondary">
-              <UserCheck className="mr-2 h-4 w-4" /> Admin Sign In
+            <Button 
+              className="w-full" 
+              type="submit" 
+              variant="secondary"
+              disabled={isLoading}
+            >
+              <UserCheck className="mr-2 h-4 w-4" /> 
+              {isLoading ? "Signing in..." : "Admin Sign In"}
             </Button>
           </form>
         </CardContent>
