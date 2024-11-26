@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // In a real production environment, you would use proper password hashing
+      // Simple password check (in production, use proper password hashing)
       if (user.password_hash !== password) {
         toast.error("Invalid credentials");
         return;
@@ -50,13 +50,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: user.email,
         role: user.role
       });
-
-      // Store session info in localStorage
-      localStorage.setItem('user', JSON.stringify({
-        id: user.id,
-        email: user.email,
-        role: user.role
-      }));
 
       // Redirect based on role
       if (user.role === 'ADMIN') {
@@ -75,21 +68,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsAuthenticated(false);
     setIsAdmin(false);
     setUser(null);
-    localStorage.removeItem('user');
     navigate('/');
     toast.success("Logged out successfully");
   };
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setIsAuthenticated(true);
-      setIsAdmin(parsedUser.role === 'ADMIN');
-      setUser(parsedUser);
-    }
-  }, []);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, isAdmin, user, login, logout }}>
