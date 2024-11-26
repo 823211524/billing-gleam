@@ -21,32 +21,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      // Temporary: Allow any credentials, determine role based on email
-      const isAdminUser = email.includes('admin');
-      
-      // Create a mock user for development
-      const mockUser = {
-        id: 1,
-        email: email,
-        role: isAdminUser ? 'ADMIN' : 'CONSUMER'
-      };
+      // Query the users table directly to check credentials
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email, role, password_hash, is_enabled')
+        .eq('email', email);
+
+      if (error) {
+        console.error('Database error:', error);
+        toast.error("An error occurred while logging in");
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        toast.error("Invalid email or password");
+        return;
+      }
+
+      const user = data[0];
+
+      if (!user.is_enabled) {
+        toast.error("This account has been disabled");
+        return;
+      }
+
+      // Compare the provided password with the stored password_hash
+      if (user.password_hash !== password) {
+        toast.error("Invalid email or password");
+        return;
+      }
 
       // Set authentication state
       setIsAuthenticated(true);
-      setIsAdmin(isAdminUser);
-      setUser(mockUser);
+      setIsAdmin(user.role === 'ADMIN');
+      setUser({
+        id: user.id,
+        email: user.email,
+        role: user.role
+      });
 
       // Store session info in localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.setItem('user', JSON.stringify({
+        id: user.id,
+        email: user.email,
+        role: user.role
+      }));
 
       // Redirect based on role
-      if (isAdminUser) {
+      if (user.role === 'ADMIN') {
         navigate('/admin/dashboard');
-        toast.success("Logged in as Administrator");
       } else {
         navigate('/consumer/dashboard');
-        toast.success("Logged in as Consumer");
       }
+      
+      toast.success("Login successful");
     } catch (error) {
       console.error('Login error:', error);
       toast.error("An error occurred during login");
