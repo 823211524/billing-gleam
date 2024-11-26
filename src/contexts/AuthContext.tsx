@@ -21,16 +21,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const { data: user, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('id, email, role, password_hash, is_enabled')
-        .eq('email', email)
-        .single();
+        .eq('email', email);
 
-      if (error || !user) {
+      if (error) {
+        toast.error("An error occurred while logging in");
+        return;
+      }
+
+      if (!data || data.length === 0) {
         toast.error("Invalid credentials");
         return;
       }
+
+      const user = data[0];
 
       if (!user.is_enabled) {
         toast.error("This account has been disabled");
@@ -67,6 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       toast.success("Login successful");
     } catch (error) {
+      console.error('Login error:', error);
       toast.error("An error occurred during login");
     }
   };
