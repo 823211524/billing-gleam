@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AddCustomerForm = () => {
   const { toast } = useToast();
@@ -17,12 +17,47 @@ export const AddCustomerForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     try {
-      // TODO: Implement actual API call
+      // First check if email exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', formData.email)
+        .single();
+
+      if (existingUser) {
+        toast({
+          title: "Email already exists",
+          description: "Please use a different email address",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // If email doesn't exist, proceed with user creation
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            email: formData.email,
+            given_name: formData.givenName,
+            surname: formData.surname,
+            address: formData.address,
+            role: 'CONSUMER',
+            password_hash: 'temporary_hash' // This should be properly handled with authentication
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
         title: "Customer added successfully",
         description: "The customer has been registered in the system"
       });
+      
       setFormData({
         givenName: "",
         surname: "",
@@ -30,10 +65,10 @@ export const AddCustomerForm = () => {
         address: "",
         meterId: ""
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error adding customer",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
         variant: "destructive"
       });
     }
