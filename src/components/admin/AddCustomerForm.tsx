@@ -4,9 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const AddCustomerForm = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     givenName: "",
     surname: "",
@@ -63,6 +65,8 @@ export const AddCustomerForm = () => {
 
         if (meterError) throw meterError;
       }
+
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
 
       toast({
         title: "Customer added successfully",

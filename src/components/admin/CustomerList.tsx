@@ -13,6 +13,7 @@ import { Search, UserX, UserCheck, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const CustomerList = () => {
   const { toast } = useToast();
@@ -22,19 +23,27 @@ export const CustomerList = () => {
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      const response = await fetch('/api/customers');
-      if (!response.ok) throw new Error('Failed to fetch customers');
-      return response.json();
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'CONSUMER');
+      
+      if (error) throw error;
+      return data;
     }
   });
 
   const disableMutation = useMutation({
     mutationFn: async ({ userId, action }: { userId: number, action: 'disable' | 'enable' }) => {
-      const response = await fetch(`/api/customers/${userId}/${action}`, {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error(`Failed to ${action} customer`);
-      return response.json();
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          is_enabled: action === 'enable',
+          disabled_at: action === 'disable' ? new Date().toISOString() : null
+        })
+        .eq('id', userId);
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -47,11 +56,12 @@ export const CustomerList = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/customers/${userId}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Failed to delete customer');
-      return response.json();
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -63,11 +73,11 @@ export const CustomerList = () => {
   });
 
   const filteredCustomers = customers.filter(customer => 
-    `${customer.givenName} ${customer.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${customer.given_name} ${customer.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canDelete = (disabledAt: Date | null) => {
+  const canDelete = (disabledAt: string | null) => {
     if (!disabledAt) return false;
     const fiveYearsAgo = new Date();
     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
@@ -115,19 +125,19 @@ export const CustomerList = () => {
             ) : (
               filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
-                  <TableCell>{`${customer.givenName} ${customer.surname}`}</TableCell>
+                  <TableCell>{`${customer.given_name} ${customer.surname}`}</TableCell>
                   <TableCell>{customer.email}</TableCell>
                   <TableCell>{customer.address}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      customer.isEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      customer.is_enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {customer.isEnabled ? 'Active' : 'Disabled'}
+                      {customer.is_enabled ? 'Active' : 'Disabled'}
                     </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      {customer.isEnabled ? (
+                      {customer.is_enabled ? (
                         <Button
                           variant="destructive"
                           size="sm"
@@ -144,7 +154,7 @@ export const CustomerList = () => {
                           <UserCheck className="h-4 w-4" />
                         </Button>
                       )}
-                      {canDelete(customer.disabledAt) && (
+                      {canDelete(customer.disabled_at) && (
                         <Button
                           variant="destructive"
                           size="sm"
