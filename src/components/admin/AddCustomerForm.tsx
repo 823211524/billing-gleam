@@ -23,7 +23,7 @@ export const AddCustomerForm = () => {
     try {
       // First check if email exists
       const { data: existingUser } = await supabase
-        .from('users')
+        .from('consumers')
         .select('email')
         .eq('email', formData.email)
         .single();
@@ -39,15 +39,13 @@ export const AddCustomerForm = () => {
 
       // If email doesn't exist, proceed with user creation
       const { data, error } = await supabase
-        .from('users')
+        .from('consumers')
         .insert([
           {
             email: formData.email,
             given_name: formData.givenName,
             surname: formData.surname,
             address: formData.address,
-            role: 'CONSUMER',
-            password_hash: 'temporary_hash',
             is_enabled: true
           }
         ])
@@ -55,16 +53,6 @@ export const AddCustomerForm = () => {
         .single();
 
       if (error) throw error;
-
-      // If a meter ID was provided, update the meter with the new user's ID
-      if (formData.meterId && data) {
-        const { error: meterError } = await supabase
-          .from('meters')
-          .update({ consumer_id: data.id })
-          .eq('id', formData.meterId);
-
-        if (meterError) throw meterError;
-      }
 
       queryClient.invalidateQueries({ queryKey: ['customers'] });
 
@@ -128,14 +116,6 @@ export const AddCustomerForm = () => {
           value={formData.address}
           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="meterId">Meter ID (Optional)</Label>
-        <Input
-          id="meterId"
-          value={formData.meterId}
-          onChange={(e) => setFormData({ ...formData, meterId: e.target.value })}
         />
       </div>
       <Button type="submit" className="w-full">Add Customer</Button>

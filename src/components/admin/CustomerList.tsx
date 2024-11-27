@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, UserX, UserCheck, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { User } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,9 +23,8 @@ export const CustomerList = () => {
     queryKey: ['customers'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('role', 'CONSUMER');
+        .from('consumers')
+        .select('*');
       
       if (error) throw error;
       return data;
@@ -34,9 +32,9 @@ export const CustomerList = () => {
   });
 
   const disableMutation = useMutation({
-    mutationFn: async ({ userId, action }: { userId: number, action: 'disable' | 'enable' }) => {
+    mutationFn: async ({ userId, action }: { userId: string, action: 'disable' | 'enable' }) => {
       const { error } = await supabase
-        .from('users')
+        .from('consumers')
         .update({ 
           is_enabled: action === 'enable',
           disabled_at: action === 'disable' ? new Date().toISOString() : null
@@ -50,24 +48,6 @@ export const CustomerList = () => {
       toast({
         title: "Customer status updated",
         description: "The customer's status has been updated successfully"
-      });
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast({
-        title: "Customer deleted",
-        description: "The customer has been permanently deleted from the system"
       });
     }
   });
@@ -152,15 +132,6 @@ export const CustomerList = () => {
                           onClick={() => disableMutation.mutate({ userId: customer.id, action: 'enable' })}
                         >
                           <UserCheck className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {canDelete(customer.disabled_at) && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(customer.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
