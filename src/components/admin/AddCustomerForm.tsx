@@ -45,13 +45,24 @@ export const AddCustomerForm = () => {
             surname: formData.surname,
             address: formData.address,
             role: 'CONSUMER',
-            password_hash: 'temporary_hash' // This should be properly handled with authentication
+            password_hash: 'temporary_hash',
+            is_enabled: true
           }
         ])
         .select()
         .single();
 
       if (error) throw error;
+
+      // If a meter ID was provided, update the meter with the new user's ID
+      if (formData.meterId && data) {
+        const { error: meterError } = await supabase
+          .from('meters')
+          .update({ consumer_id: data.id })
+          .eq('id', formData.meterId);
+
+        if (meterError) throw meterError;
+      }
 
       toast({
         title: "Customer added successfully",
@@ -116,12 +127,11 @@ export const AddCustomerForm = () => {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="meterId">Meter ID</Label>
+        <Label htmlFor="meterId">Meter ID (Optional)</Label>
         <Input
           id="meterId"
           value={formData.meterId}
           onChange={(e) => setFormData({ ...formData, meterId: e.target.value })}
-          required
         />
       </div>
       <Button type="submit" className="w-full">Add Customer</Button>
