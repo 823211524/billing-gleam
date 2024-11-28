@@ -14,16 +14,15 @@ export const AddCustomerForm = () => {
     surname: "",
     email: "",
     address: "",
-    meterId: ""
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // First check if email exists - using .maybeSingle() instead of .single()
+      // First check if email exists
       const { data: existingUser, error: checkError } = await supabase
-        .from('consumers')
+        .from('users')
         .select('email')
         .eq('email', formData.email)
         .maybeSingle();
@@ -41,14 +40,16 @@ export const AddCustomerForm = () => {
 
       // If email doesn't exist, proceed with user creation
       const { data, error } = await supabase
-        .from('consumers')
+        .from('users')
         .insert([
           {
             email: formData.email,
             given_name: formData.givenName,
             surname: formData.surname,
             address: formData.address,
-            is_enabled: true
+            role: 'CONSUMER',
+            is_enabled: true,
+            password_hash: 'temporary' // This should be handled properly in a real application
           }
         ])
         .select();
@@ -67,7 +68,6 @@ export const AddCustomerForm = () => {
         surname: "",
         email: "",
         address: "",
-        meterId: ""
       });
     } catch (error: any) {
       toast({

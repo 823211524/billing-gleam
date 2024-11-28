@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bills: {
+        Row: {
+          amount: number
+          consumption: number
+          created_at: string
+          due_date: string
+          id: number
+          paid: boolean
+          pdf_url: string
+          reading_id: number
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          amount: number
+          consumption: number
+          created_at?: string
+          due_date: string
+          id?: number
+          paid?: boolean
+          pdf_url: string
+          reading_id: number
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          amount?: number
+          consumption?: number
+          created_at?: string
+          due_date?: string
+          id?: number
+          paid?: boolean
+          pdf_url?: string
+          reading_id?: number
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_reading_id_fkey"
+            columns: ["reading_id"]
+            isOneToOne: true
+            referencedRelation: "readings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consumers: {
         Row: {
           address: string
@@ -45,6 +99,53 @@ export type Database = {
         }
         Relationships: []
       }
+      meters: {
+        Row: {
+          consumer_id: number | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          latitude: number
+          longitude: number
+          qr_code: string
+          secret_word: string | null
+          table_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          consumer_id?: number | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          latitude: number
+          longitude: number
+          qr_code: string
+          secret_word?: string | null
+          table_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consumer_id?: number | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          latitude?: number
+          longitude?: number
+          qr_code?: string
+          secret_word?: string | null
+          table_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meters_consumer_id_fkey"
+            columns: ["consumer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reading: {
         Row: {
           created_at: string
@@ -60,18 +161,123 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
+      readings: {
         Row: {
           created_at: string
           id: number
+          image_location: Json | null
+          image_url: string
+          manual_input: boolean
+          meter_id: string
+          month: number
+          ocr_confidence: number | null
+          reading: number
+          updated_at: string
+          user_id: number
+          validated: boolean
+          validated_by_admin: boolean
+          validated_by_consumer: boolean
+          validation_errors: string[] | null
+          year: number
         }
         Insert: {
           created_at?: string
           id?: number
+          image_location?: Json | null
+          image_url: string
+          manual_input?: boolean
+          meter_id: string
+          month: number
+          ocr_confidence?: number | null
+          reading: number
+          updated_at?: string
+          user_id: number
+          validated?: boolean
+          validated_by_admin?: boolean
+          validated_by_consumer?: boolean
+          validation_errors?: string[] | null
+          year: number
         }
         Update: {
           created_at?: string
           id?: number
+          image_location?: Json | null
+          image_url?: string
+          manual_input?: boolean
+          meter_id?: string
+          month?: number
+          ocr_confidence?: number | null
+          reading?: number
+          updated_at?: string
+          user_id?: number
+          validated?: boolean
+          validated_by_admin?: boolean
+          validated_by_consumer?: boolean
+          validation_errors?: string[] | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readings_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "readings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          address: string
+          created_at: string
+          disabled_at: string | null
+          email: string
+          given_name: string
+          id: number
+          is_enabled: boolean
+          password_hash: string
+          role: Database["public"]["Enums"]["user_role"]
+          secret_word: string | null
+          surname: string
+          table_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          disabled_at?: string | null
+          email: string
+          given_name: string
+          id?: number
+          is_enabled?: boolean
+          password_hash: string
+          role?: Database["public"]["Enums"]["user_role"]
+          secret_word?: string | null
+          surname: string
+          table_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          disabled_at?: string | null
+          email?: string
+          given_name?: string
+          id?: number
+          is_enabled?: boolean
+          password_hash?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          secret_word?: string | null
+          surname?: string
+          table_name?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -83,7 +289,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "ADMIN" | "CONSUMER"
     }
     CompositeTypes: {
       [_ in never]: never

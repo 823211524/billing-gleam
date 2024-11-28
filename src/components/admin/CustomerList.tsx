@@ -23,8 +23,9 @@ export const CustomerList = () => {
     queryKey: ['customers'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('consumers')
+        .from('users')
         .select('*')
+        .eq('role', 'CONSUMER')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -42,7 +43,7 @@ export const CustomerList = () => {
   const disableMutation = useMutation({
     mutationFn: async ({ userId, action }: { userId: string, action: 'disable' | 'enable' }) => {
       const { error } = await supabase
-        .from('consumers')
+        .from('users')
         .update({ 
           is_enabled: action === 'enable',
           disabled_at: action === 'disable' ? new Date().toISOString() : null
