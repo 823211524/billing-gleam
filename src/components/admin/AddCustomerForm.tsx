@@ -21,12 +21,14 @@ export const AddCustomerForm = () => {
     e.preventDefault();
     
     try {
-      // First check if email exists
-      const { data: existingUser } = await supabase
+      // First check if email exists - using .maybeSingle() instead of .single()
+      const { data: existingUser, error: checkError } = await supabase
         .from('consumers')
         .select('email')
         .eq('email', formData.email)
-        .single();
+        .maybeSingle();
+
+      if (checkError) throw checkError;
 
       if (existingUser) {
         toast({
@@ -49,8 +51,7 @@ export const AddCustomerForm = () => {
             is_enabled: true
           }
         ])
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
 

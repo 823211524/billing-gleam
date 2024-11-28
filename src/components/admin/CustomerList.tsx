@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Search, UserX, UserCheck } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,15 +19,23 @@ export const CustomerList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
 
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customers = [], isLoading, error } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('consumers')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        toast({
+          title: "Error fetching customers",
+          description: error.message,
+          variant: "destructive"
+        });
+        return [];
+      }
+      return data || [];
     }
   });
 
@@ -49,6 +57,13 @@ export const CustomerList = () => {
         title: "Customer status updated",
         description: "The customer's status has been updated successfully"
       });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating customer",
+        description: error.message || "Failed to update customer status",
+        variant: "destructive"
+      });
     }
   });
 
@@ -56,13 +71,6 @@ export const CustomerList = () => {
     `${customer.given_name} ${customer.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const canDelete = (disabledAt: string | null) => {
-    if (!disabledAt) return false;
-    const fiveYearsAgo = new Date();
-    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-    return new Date(disabledAt) <= fiveYearsAgo;
-  };
 
   return (
     <div className="space-y-4">
@@ -94,6 +102,12 @@ export const CustomerList = () => {
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
                   Loading customers...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-red-500">
+                  Error loading customers
                 </TableCell>
               </TableRow>
             ) : filteredCustomers.length === 0 ? (
