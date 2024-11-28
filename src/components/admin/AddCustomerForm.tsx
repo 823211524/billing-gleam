@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 export const AddCustomerForm = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     givenName: "",
     surname: "",
@@ -19,6 +21,19 @@ export const AddCustomerForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // First check if we're authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in as an admin to add customers",
+        variant: "destructive"
+      });
+      navigate("/admin/login");
+      return;
+    }
+
     try {
       // First check if email exists
       const { data: existingUser, error: checkError } = await supabase
@@ -38,18 +53,39 @@ export const AddCustomerForm = () => {
         return;
       }
 
-      // If email doesn't exist, proceed with user creation
+      // Generate a temporary password (in a real app, you'd want to send this to the user's email)
+      const temporaryPassword = Math.random().toString(36).slice(-8);
+
+      // Create auth user first
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: temporaryPassword,
+        options: {
+          data: {
+            role: 'CONSUMER'
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Failed to create auth user');
+      }
+
+      // If email doesn't exist, proceed with user creation in the users table
       const { data, error } = await supabase
         .from('users')
         .insert([
           {
+            id: authData.user.id,
             email: formData.email,
             given_name: formData.givenName,
             surname: formData.surname,
             address: formData.address,
             role: 'CONSUMER',
             is_enabled: true,
-            password_hash: 'temporary' // This should be handled properly in a real application
+            password_hash: temporaryPassword // This should be handled properly in a real application
           }
         ])
         .select();
