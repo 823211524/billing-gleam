@@ -53,7 +53,7 @@ export const AddCustomerForm = () => {
         return;
       }
 
-      // Generate a temporary password (in a real app, you'd want to send this to the user's email)
+      // Generate a temporary password
       const temporaryPassword = Math.random().toString(36).slice(-8);
 
       // Create auth user first
@@ -73,22 +73,18 @@ export const AddCustomerForm = () => {
         throw new Error('Failed to create auth user');
       }
 
-      // If email doesn't exist, proceed with user creation in the users table
-      const { data, error } = await supabase
+      // Create user in the users table
+      const { error } = await supabase
         .from('users')
-        .insert([
-          {
-            id: authData.user.id,
-            email: formData.email,
-            given_name: formData.givenName,
-            surname: formData.surname,
-            address: formData.address,
-            role: 'CONSUMER',
-            is_enabled: true,
-            password_hash: temporaryPassword // This should be handled properly in a real application
-          }
-        ])
-        .select();
+        .insert({
+          email: formData.email,
+          given_name: formData.givenName,
+          surname: formData.surname,
+          address: formData.address,
+          role: 'CONSUMER',
+          is_enabled: true,
+          password_hash: temporaryPassword
+        });
 
       if (error) throw error;
 
