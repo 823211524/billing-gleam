@@ -45,6 +45,21 @@ export type Database = {
         }
         Relationships: []
       }
+      reading: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
