@@ -19,25 +19,37 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // First, attempt to sign in
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) {
+        throw new Error(authError.message);
+      }
 
-      // Check if the user is an admin
+      if (!authData.user) {
+        throw new Error("No user data returned");
+      }
+
+      // Then check if the user is an admin
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('role')
         .eq('email', email)
         .single();
 
-      if (userError) throw userError;
-
-      if (userData.role !== 'ADMIN') {
+      if (userError) {
+        // If there's an error checking the role, sign out and throw error
         await supabase.auth.signOut();
-        throw new Error('Unauthorized: Admin access only');
+        throw new Error("Error verifying admin status");
+      }
+
+      if (userData?.role !== 'ADMIN') {
+        // If not an admin, sign out and throw error
+        await supabase.auth.signOut();
+        throw new Error("Unauthorized: Admin access only");
       }
 
       toast({
@@ -49,9 +61,12 @@ const AdminLogin = () => {
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "An error occurred during login",
         variant: "destructive",
       });
+      
+      // Ensure user is signed out on any error
+      await supabase.auth.signOut();
     } finally {
       setIsLoading(false);
     }
