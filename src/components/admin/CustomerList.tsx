@@ -41,7 +41,7 @@ export const CustomerList = () => {
   });
 
   const disableMutation = useMutation({
-    mutationFn: async ({ userId, action }: { userId: string, action: 'disable' | 'enable' }) => {
+    mutationFn: async ({ userId, action }: { userId: number, action: 'disable' | 'enable' }) => {
       const { error } = await supabase
         .from('users')
         .update({ 
