@@ -13,32 +13,15 @@ import { Search, UserX, UserCheck } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 export const CustomerList = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  // Check authentication and admin status
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        navigate('/admin/login');
-        return null;
-      }
-      return session;
-    }
-  });
 
   const { data: customers = [], isLoading, error } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      if (!session) return [];
-      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -47,14 +30,11 @@ export const CustomerList = () => {
       
       if (error) throw error;
       return data || [];
-    },
-    enabled: !!session
+    }
   });
 
   const disableMutation = useMutation({
     mutationFn: async ({ userId, action }: { userId: number, action: 'disable' | 'enable' }) => {
-      if (!session) throw new Error('Not authenticated');
-
       const { error } = await supabase
         .from('users')
         .update({ 
