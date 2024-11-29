@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,45 +9,21 @@ import { CustomerList } from "@/components/admin/CustomerList";
 import { ReadingValidation } from "@/components/admin/ReadingValidation";
 import { MeterManagement } from "@/components/admin/meter/MeterManagement";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("customers");
-  const { session, loading } = useAuth();
 
-  useEffect(() => {
-    if (!loading && !session) {
-      navigate("/admin/login");
-    }
-  }, [session, loading, navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out"
-      });
-      navigate("/admin/login");
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
+  const handleLogout = () => {
+    // TODO: Implement actual logout logic
+    localStorage.clear();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out"
+    });
+    navigate("/");
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!session) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
