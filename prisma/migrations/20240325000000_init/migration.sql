@@ -14,6 +14,12 @@ CREATE TABLE "User" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+
+    ALTER TABLE "User" DISABLE ROW LEVEL SECURITY;
+    GRANT INSERT ON TABLE "User" TO UserRole;
+    SELECT * FROM pg_policies WHERE tablename = User;
+
+
 );
 
 -- CreateTable
