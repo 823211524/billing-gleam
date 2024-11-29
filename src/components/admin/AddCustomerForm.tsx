@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 export const AddCustomerForm = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     givenName: "",
     surname: "",
@@ -16,8 +18,30 @@ export const AddCustomerForm = () => {
     address: "",
   });
 
+  // Check authentication and admin status
+  const { data: session } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        navigate('/admin/login');
+        return null;
+      }
+      return session;
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!session) {
+      toast({
+        title: "Error",
+        description: "You must be logged in as an admin to perform this action",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       const { data: existingUser } = await supabase
