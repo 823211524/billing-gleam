@@ -20,14 +20,11 @@ export const AddCustomerForm = () => {
     e.preventDefault();
     
     try {
-      // First check if email exists
-      const { data: existingUser, error: checkError } = await supabase
+      const { data: existingUser } = await supabase
         .from('users')
         .select('email')
         .eq('email', formData.email)
         .maybeSingle();
-
-      if (checkError) throw checkError;
 
       if (existingUser) {
         toast({
@@ -38,7 +35,6 @@ export const AddCustomerForm = () => {
         return;
       }
 
-      // If email doesn't exist, proceed with user creation
       const { data, error } = await supabase
         .from('users')
         .insert([
@@ -49,7 +45,7 @@ export const AddCustomerForm = () => {
             address: formData.address,
             role: 'CONSUMER',
             is_enabled: true,
-            password_hash: 'temporary' // This should be handled properly in a real application
+            password_hash: 'temporary'
           }
         ])
         .select();
@@ -59,8 +55,8 @@ export const AddCustomerForm = () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
 
       toast({
-        title: "Customer added successfully",
-        description: "The customer has been registered in the system"
+        title: "Success",
+        description: "Customer added successfully"
       });
       
       setFormData({
@@ -71,8 +67,8 @@ export const AddCustomerForm = () => {
       });
     } catch (error: any) {
       toast({
-        title: "Error adding customer",
-        description: error.message || "Please try again later",
+        title: "Error",
+        description: error.message,
         variant: "destructive"
       });
     }

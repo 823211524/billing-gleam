@@ -28,14 +28,7 @@ export const CustomerList = () => {
         .eq('role', 'CONSUMER')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        toast({
-          title: "Error fetching customers",
-          description: error.message,
-          variant: "destructive"
-        });
-        return [];
-      }
+      if (error) throw error;
       return data || [];
     }
   });
@@ -55,14 +48,14 @@ export const CustomerList = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       toast({
-        title: "Customer status updated",
-        description: "The customer's status has been updated successfully"
+        title: "Success",
+        description: "Customer status updated successfully"
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error updating customer",
-        description: error.message || "Failed to update customer status",
+        title: "Error",
+        description: error.message,
         variant: "destructive"
       });
     }
