@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 export const AddCustomerForm = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     givenName: "",
     surname: "",
@@ -20,6 +22,20 @@ export const AddCustomerForm = () => {
     e.preventDefault();
     
     try {
+      // First check if we're authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive"
+        });
+        navigate("/admin/login");
+        return;
+      }
+
+      // Check if email exists
       const { data: existingUser } = await supabase
         .from('users')
         .select('email')
@@ -35,6 +51,7 @@ export const AddCustomerForm = () => {
         return;
       }
 
+      // Insert new user
       const { data, error } = await supabase
         .from('users')
         .insert([
@@ -45,7 +62,7 @@ export const AddCustomerForm = () => {
             address: formData.address,
             role: 'CONSUMER',
             is_enabled: true,
-            password_hash: 'temporary'
+            password_hash: 'temporary' // This should be handled properly in a production environment
           }
         ])
         .select();
@@ -66,9 +83,10 @@ export const AddCustomerForm = () => {
         address: "",
       });
     } catch (error: any) {
+      console.error('Error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to add customer",
         variant: "destructive"
       });
     }
