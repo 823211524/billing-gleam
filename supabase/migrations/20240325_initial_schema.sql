@@ -5,7 +5,7 @@ ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
 CREATE TYPE user_role AS ENUM ('ADMIN', 'CONSUMER');
 
 CREATE TABLE users (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    id BIGSERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     given_name TEXT NOT NULL,
@@ -70,6 +70,8 @@ CREATE INDEX idx_readings_year_month ON readings(year, month);
 CREATE INDEX idx_readings_validated ON readings(validated);
 CREATE INDEX idx_bills_paid ON bills(paid);
 CREATE INDEX idx_users_is_enabled ON users(is_enabled);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -84,22 +86,10 @@ CREATE POLICY "Users can view their own data" ON users
 CREATE POLICY "Admins can insert users" ON users
     FOR INSERT WITH CHECK (role = 'ADMIN');
 
-CREATE POLICY "Users can view assigned meters" ON meters
-    FOR SELECT USING (consumer_id::text = auth.uid()::text OR EXISTS (
-        SELECT 1 FROM users WHERE id::text = auth.uid()::text AND role = 'ADMIN'
-    ));
+CREATE POLICY "Users can update their own data" ON users
+    FOR UPDATE USING (auth.uid()::text = id::text OR role = 'ADMIN');
 
-CREATE POLICY "Users can view their readings" ON readings
-    FOR SELECT USING (user_id::text = auth.uid()::text OR EXISTS (
-        SELECT 1 FROM users WHERE id::text = auth.uid()::text AND role = 'ADMIN'
-    ));
-
-CREATE POLICY "Users can view their bills" ON bills
-    FOR SELECT USING (user_id::text = auth.uid()::text OR EXISTS (
-        SELECT 1 FROM users WHERE id::text = auth.uid()::text AND role = 'ADMIN'
-    ));
-
--- Create triggers for updated_at
+-- Create trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -128,13 +118,21 @@ CREATE TRIGGER update_bills_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
--- Insert initial admin user
-INSERT INTO users (email, password_hash, given_name, surname, address, role)
-VALUES (
-    'bbmatlho@idm.ac.bw',
+-- Insert initial admin user (use a secure password in production)
+INSERT INTO users (
+    email,
+    password_hash,
+    given_name,
+    surname,
+    address,
+    role,
+    is_enabled
+) VALUES (
+    'admin@example.com',
     '$2a$10$xxxxxxxxxxx', -- Replace with actual hashed password
     'Admin',
     'User',
-    'IDM Address',
-    'ADMIN'
+    'Admin Address',
+    'ADMIN',
+    true
 );
