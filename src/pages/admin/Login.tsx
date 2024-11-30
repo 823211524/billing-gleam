@@ -24,30 +24,27 @@ const AdminLogin = () => {
         password,
       });
 
-      if (authError) {
-        throw new Error(authError.message);
-      }
+      if (authError) throw authError;
 
       if (authData.user) {
-        // Check if user exists in our database and is an admin
+        // Then check if user exists in our users table and is an admin
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('role, is_enabled')
           .eq('email', email)
           .single();
 
-        if (userError) {
-          throw new Error('Error fetching user data');
+        if (userError) throw userError;
+
+        if (!userData) {
+          throw new Error('User not found in database');
         }
 
-        if (!userData || userData.role !== 'ADMIN') {
-          // If not an admin, sign out and show error
-          await supabase.auth.signOut();
+        if (userData.role !== 'ADMIN') {
           throw new Error('Unauthorized access. Admin privileges required.');
         }
 
         if (!userData.is_enabled) {
-          await supabase.auth.signOut();
           throw new Error('This account has been disabled.');
         }
 
@@ -61,9 +58,12 @@ const AdminLogin = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to login",
         variant: "destructive",
       });
+      
+      // Sign out if there was an error after authentication
+      await supabase.auth.signOut();
     } finally {
       setIsLoading(false);
     }
