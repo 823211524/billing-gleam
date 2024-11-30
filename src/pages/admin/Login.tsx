@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
@@ -19,26 +19,37 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // First, sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) {
+        throw new Error(authError.message);
+      }
 
-      if (data.user) {
-        // Check if user is admin
+      if (authData.user) {
+        // Check if user exists in our database and is an admin
         const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role')
+          .from('User')
+          .select('role, isEnabled')
           .eq('email', email)
           .single();
 
-        if (userError) throw userError;
+        if (userError) {
+          throw new Error('Error fetching user data');
+        }
 
-        if (userData.role !== 'ADMIN') {
+        if (!userData || userData.role !== 'ADMIN') {
+          // If not an admin, sign out and show error
           await supabase.auth.signOut();
           throw new Error('Unauthorized access. Admin privileges required.');
+        }
+
+        if (!userData.isEnabled) {
+          await supabase.auth.signOut();
+          throw new Error('This account has been disabled.');
         }
 
         toast({
