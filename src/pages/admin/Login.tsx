@@ -5,13 +5,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Mail } from "lucide-react";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingCredentials, setIsSendingCredentials] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleRequestCredentials = async () => {
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingCredentials(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('send-login-credentials', {
+        body: { email },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Temporary login credentials have been sent to your email",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingCredentials(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,8 +106,8 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-md space-y-8 rounded-lg border p-6 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+      <div className="w-full max-w-md space-y-8 rounded-lg border p-6 shadow-lg bg-white">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">Admin Login</h1>
           <p className="text-gray-500">Enter your credentials to access the admin dashboard</p>
@@ -97,9 +133,29 @@ const AdminLogin = () => {
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </Button>
+          <div className="space-y-4">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or</span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleRequestCredentials}
+              disabled={isSendingCredentials}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              {isSendingCredentials ? "Sending..." : "Request Temporary Credentials"}
+            </Button>
+          </div>
         </form>
       </div>
     </div>
