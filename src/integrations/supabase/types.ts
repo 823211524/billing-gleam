@@ -24,54 +24,6 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          address: string
-          created_at: string
-          disabled_at: string | null
-          email: string
-          given_name: string
-          id: number
-          is_enabled: boolean
-          password_hash: string
-          role: Database["public"]["Enums"]["user_role"]
-          secret_word: string | null
-          surname: string
-          table_name: string | null
-          updated_at: string
-        }
-        Insert: {
-          address: string
-          created_at?: string
-          disabled_at?: string | null
-          email: string
-          given_name: string
-          id?: number
-          is_enabled?: boolean
-          password_hash: string
-          role?: Database["public"]["Enums"]["user_role"]
-          secret_word?: string | null
-          surname: string
-          table_name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string
-          created_at?: string
-          disabled_at?: string | null
-          email?: string
-          given_name?: string
-          id?: number
-          is_enabled?: boolean
-          password_hash?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          secret_word?: string | null
-          surname?: string
-          table_name?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -80,7 +32,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: "ADMIN" | "CONSUMER"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
