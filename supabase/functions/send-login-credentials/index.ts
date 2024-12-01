@@ -31,15 +31,17 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is missing');
       throw new Error('RESEND_API_KEY is not configured');
     }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Supabase configuration is missing');
       throw new Error('Supabase configuration is missing');
     }
 
     const { email } = await req.json();
-    console.log('Received request for email:', email);
+    console.log('Processing request for email:', email);
 
     // Create Supabase client with service role key
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -51,8 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('email', email)
       .single();
 
-    console.log('User data:', userData);
-    console.log('User error:', userError);
+    console.log('User lookup result:', { userData, userError });
 
     if (userError || !userData) {
       return new Response(
@@ -120,7 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
-    console.log('Email response status:', emailResponse.status);
+    console.log('Email API response status:', emailResponse.status);
 
     if (!emailResponse.ok) {
       const emailError = await emailResponse.text();
