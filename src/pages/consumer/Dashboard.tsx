@@ -10,6 +10,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { BillsList } from "@/components/consumer/BillsList";
 
 const formSchema = z.object({
   meterReading: z.string().min(1, "Meter reading is required"),
@@ -120,7 +121,7 @@ const Dashboard = () => {
                   Take a clear photo of your electricity meter and enter the reading
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="bg-yellow-50 p-4 rounded-lg flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
                   <div className="text-sm text-yellow-800">
@@ -184,9 +185,7 @@ const Dashboard = () => {
                 <CardDescription>View and download your electricity bills</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-center text-gray-500 py-8">
-                  Your bills will appear here once processed
-                </p>
+                <BillsList />
               </CardContent>
             </Card>
           </TabsContent>
