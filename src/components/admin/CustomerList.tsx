@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Search, UserX, UserCheck } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 export const CustomerList = () => {
   const { toast } = useToast();
@@ -22,27 +21,14 @@ export const CustomerList = () => {
   const { data: customers = [], isLoading, error } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('role', 'CONSUMER');
-      
-      if (error) throw error;
-      return data;
+      // TODO: Implement actual customer fetching
+      return [];
     }
   });
 
   const disableMutation = useMutation({
     mutationFn: async ({ userId, action }: { userId: number, action: 'disable' | 'enable' }) => {
-      const { error } = await supabase
-        .from('users')
-        .update({ 
-          is_enabled: action === 'enable',
-          disabled_at: action === 'disable' ? new Date().toISOString() : null
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
+      // TODO: Implement actual customer disable/enable
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
