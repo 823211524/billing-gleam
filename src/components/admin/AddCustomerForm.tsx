@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AddCustomerForm = () => {
   const { toast } = useToast();
@@ -19,7 +20,20 @@ export const AddCustomerForm = () => {
     e.preventDefault();
     
     try {
-      // TODO: Implement actual customer addition logic
+      const { error } = await supabase
+        .from('users')
+        .insert([{
+          given_name: formData.givenName,
+          surname: formData.surname,
+          email: formData.email,
+          address: formData.address,
+          role: 'CONSUMER',
+          password_hash: 'temporary_hash', // This should be handled properly in production
+          is_enabled: true
+        }]);
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Customer added successfully"

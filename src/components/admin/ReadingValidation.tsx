@@ -9,20 +9,60 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Reading } from "@/types";
 import { Check, X, Image } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ReadingValidation = () => {
   const { toast } = useToast();
-  const [readings] = useState<Reading[]>([]); // TODO: Replace with actual API data
+  const queryClient = useQueryClient();
 
-  const handleValidate = (readingId: number, validated: boolean) => {
-    // TODO: Implement actual validation
-    toast({
-      title: validated ? "Reading validated" : "Reading rejected",
-      description: validated ? "The reading has been approved" : "The reading has been rejected"
-    });
-  };
+  const { data: readings = [], isLoading, error } = useQuery({
+    queryKey: ['readings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('readings')
+        .select(`
+          *,
+          meter:meters(id, qr_code),
+          user:users(given_name, surname)
+        `)
+        .eq('validated', false)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const validationMutation = useMutation({
+    mutationFn: async ({ readingId, validated, validationErrors = [] }: { readingId: number, validated: boolean, validationErrors?: string[] }) => {
+      const { error } = await supabase
+        .from('readings')
+        .update({ 
+          validated,
+          validated_by_admin: true,
+          validation_errors: validationErrors
+        })
+        .eq('id', readingId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readings'] });
+      toast({
+        title: "Success",
+        description: "Reading validation status updated"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <div className="space-y-4">
@@ -32,26 +72,44 @@ export const ReadingValidation = () => {
             <TableRow>
               <TableHead>Meter ID</TableHead>
               <TableHead>Reading</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Image</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {readings.length === 0 ? (
+            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
+                  Loading readings...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-red-500">
+                  Error loading readings
+                </TableCell>
+              </TableRow>
+            ) : readings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">
                   No readings pending validation
                 </TableCell>
               </TableRow>
             ) : (
               readings.map((reading) => (
                 <TableRow key={reading.id}>
-                  <TableCell>{reading.meterId}</TableCell>
+                  <TableCell>{reading.meter?.qr_code}</TableCell>
                   <TableCell>{reading.reading}</TableCell>
+                  <TableCell>{`${reading.user?.given_name} ${reading.user?.surname}`}</TableCell>
                   <TableCell>{`${reading.month}/${reading.year}`}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => window.open(reading.image_url, '_blank')}
+                    >
                       <Image className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -60,14 +118,18 @@ export const ReadingValidation = () => {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleValidate(reading.id, true)}
+                        onClick={() => validationMutation.mutate({ readingId: reading.id, validated: true })}
                       >
                         <Check className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleValidate(reading.id, false)}
+                        onClick={() => validationMutation.mutate({ 
+                          readingId: reading.id, 
+                          validated: false,
+                          validationErrors: ['Reading rejected by admin']
+                        })}
                       >
                         <X className="h-4 w-4" />
                       </Button>

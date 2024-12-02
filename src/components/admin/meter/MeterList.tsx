@@ -1,7 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 
 interface Meter {
   id: string;
@@ -13,29 +12,12 @@ interface Meter {
 
 interface MeterListProps {
   meters: Meter[];
+  isLoading: boolean;
   onEdit: (meter: Meter) => void;
   onDelete: (meterId: string) => Promise<void>;
 }
 
-export const MeterList = ({ meters, onEdit, onDelete }: MeterListProps) => {
-  const { toast } = useToast();
-
-  const handleDelete = async (meterId: string) => {
-    try {
-      await onDelete(meterId);
-      toast({
-        title: "Meter deleted",
-        description: "The meter has been removed from the system",
-      });
-    } catch (error) {
-      toast({
-        title: "Error deleting meter",
-        description: "This meter might be in use by a consumer",
-        variant: "destructive",
-      });
-    }
-  };
-
+export const MeterList = ({ meters, isLoading, onEdit, onDelete }: MeterListProps) => {
   return (
     <Table>
       <TableHeader>
@@ -47,29 +29,45 @@ export const MeterList = ({ meters, onEdit, onDelete }: MeterListProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {meters.map((meter) => (
-          <TableRow key={meter.id}>
-            <TableCell>{meter.tableName}</TableCell>
-            <TableCell>{meter.enabled ? "Enabled" : "Disabled"}</TableCell>
-            <TableCell>{new Date(meter.dateOfChange).toLocaleDateString()}</TableCell>
-            <TableCell className="text-right space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(meter)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDelete(meter.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TableCell>
+        {isLoading ? (
+          <TableRow>
+            <TableCell colSpan={4} className="text-center">Loading meters...</TableCell>
           </TableRow>
-        ))}
+        ) : meters.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={4} className="text-center">No meters found</TableCell>
+          </TableRow>
+        ) : (
+          meters.map((meter) => (
+            <TableRow key={meter.id}>
+              <TableCell>{meter.tableName}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  meter.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {meter.enabled ? "Enabled" : "Disabled"}
+                </span>
+              </TableCell>
+              <TableCell>{new Date(meter.dateOfChange).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(meter)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(meter.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
       </TableBody>
     </Table>
   );
