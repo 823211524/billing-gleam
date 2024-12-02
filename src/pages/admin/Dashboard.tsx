@@ -1,119 +1,98 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
-import { Users, FileText, Settings, UserPlus, Activity } from "lucide-react";
-import { AddCustomerForm } from "@/components/admin/AddCustomerForm";
-import { CustomerList } from "@/components/admin/CustomerList";
-import { ReadingValidation } from "@/components/admin/ReadingValidation";
-import { MeterManagement } from "@/components/admin/meter/MeterManagement";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const AdminDashboard = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("customers");
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    localStorage.clear();
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out"
-    });
-    navigate("/");
+  useEffect(() => {
+    const checkAdminAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/admin/login");
+        return;
+      }
+
+      // Verify admin role
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('email', session.user.email)
+        .single();
+
+      if (error || userData?.role !== 'ADMIN') {
+        toast({
+          variant: "destructive",
+          title: "Unauthorized",
+          description: "You don't have permission to access this page",
+        });
+        await supabase.auth.signOut();
+        navigate("/admin/login");
+      }
+    };
+
+    checkAdminAuth();
+  }, [navigate, toast]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/admin/login");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">WeBill™ Admin Dashboard</h1>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <Card className="mx-auto max-w-4xl">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-2xl">Admin Dashboard</CardTitle>
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>
-        </div>
-
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-5 gap-4">
-            <TabsTrigger value="customers">
-              <Users className="w-4 h-4 mr-2" />
-              Customers
-            </TabsTrigger>
-            <TabsTrigger value="readings">
-              <FileText className="w-4 h-4 mr-2" />
-              Readings
-            </TabsTrigger>
-            <TabsTrigger value="meters">
-              <Activity className="w-4 h-4 mr-2" />
-              Meters
-            </TabsTrigger>
-            <TabsTrigger value="add-customer">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Add Customer
-            </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="customers">
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Management</CardTitle>
-                <CardDescription>View and manage registered customers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CustomerList />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="readings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Meter Readings</CardTitle>
-                <CardDescription>Validate and process meter readings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ReadingValidation />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="meters">
-            <MeterManagement />
-          </TabsContent>
-
-          <TabsContent value="add-customer">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Customer</CardTitle>
-                <CardDescription>Register a new customer in the system</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AddCustomerForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-                <CardDescription>Configure system parameters</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-gray-500 py-8">
-                  Settings management coming soon
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6">
+            <section className="space-y-4">
+              <h2 className="text-xl font-semibold">Quick Actions</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Button className="h-24 text-lg">Manage Users</Button>
+                <Button className="h-24 text-lg">View Meters</Button>
+                <Button className="h-24 text-lg">Review Readings</Button>
+                <Button className="h-24 text-lg">Generate Bills</Button>
+                <Button className="h-24 text-lg">System Settings</Button>
+                <Button className="h-24 text-lg">View Reports</Button>
+              </div>
+            </section>
+            
+            <section className="space-y-4">
+              <h2 className="text-xl font-semibold">System Overview</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">0</div>
+                    <div className="text-sm text-gray-500">Total Users</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">0</div>
+                    <div className="text-sm text-gray-500">Active Meters</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">0</div>
+                    <div className="text-sm text-gray-500">Pending Readings</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
