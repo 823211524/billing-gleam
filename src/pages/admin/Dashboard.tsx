@@ -55,6 +55,20 @@ const AdminDashboard = () => {
     }
   });
 
+  const { data: unassignedMeters = 0 } = useQuery({
+    queryKey: ['unassignedMeters'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('meters')
+        .select('*', { count: 'exact', head: true })
+        .is('consumer_id', null)
+        .eq('is_enabled', true);
+      
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <Card className="mx-auto max-w-4xl">
@@ -80,7 +94,7 @@ const AdminDashboard = () => {
             
             <section className="space-y-4">
               <h2 className="text-xl font-semibold">System Overview</h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-2xl font-bold">{totalUsers}</div>
@@ -91,6 +105,12 @@ const AdminDashboard = () => {
                   <CardContent className="pt-6">
                     <div className="text-2xl font-bold">{activeMeters}</div>
                     <div className="text-sm text-gray-500">Active Meters</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">{unassignedMeters}</div>
+                    <div className="text-sm text-gray-500">Unassigned Meters</div>
                   </CardContent>
                 </Card>
                 <Card>
