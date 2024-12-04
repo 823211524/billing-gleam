@@ -5,20 +5,7 @@ import { MeterList } from "./MeterList";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Meter {
-  id: string;
-  qr_code: string;
-  longitude: number;
-  latitude: number;
-  is_enabled: boolean;
-  secret_word: string;
-  table_name: string;
-  unit_rate: number;
-  consumer_id?: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { Meter } from "@/types/meter";
 
 export const MeterManagement = () => {
   const [editingMeter, setEditingMeter] = useState<Meter | null>(null);
@@ -34,45 +21,49 @@ export const MeterManagement = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      return data as Meter[];
     },
   });
 
   const createMeterMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Partial<Meter>) => {
       const { error } = await supabase
         .from('meters')
         .insert([{
-          qr_code: data.qrCode,
+          qr_code: data.qr_code,
           longitude: data.longitude,
           latitude: data.latitude,
-          is_enabled: data.enabled,
-          secret_word: data.secretWord,
-          table_name: data.tableName,
-          unit_rate: data.unitRate,
+          is_enabled: data.is_enabled,
+          secret_word: data.secret_word,
+          table_name: data.table_name,
+          unit_rate: data.unit_rate,
         }]);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meters'] });
+      toast({
+        title: "Success",
+        description: "Meter created successfully",
+      });
     },
   });
 
   const updateMeterMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Partial<Meter>) => {
       if (!editingMeter) return;
 
       const { error } = await supabase
         .from('meters')
         .update({
-          qr_code: data.qrCode,
+          qr_code: data.qr_code,
           longitude: data.longitude,
           latitude: data.latitude,
-          is_enabled: data.enabled,
-          secret_word: data.secretWord,
-          table_name: data.tableName,
-          unit_rate: data.unitRate,
+          is_enabled: data.is_enabled,
+          secret_word: data.secret_word,
+          table_name: data.table_name,
+          unit_rate: data.unit_rate,
         })
         .eq('id', editingMeter.id);
 
@@ -81,6 +72,10 @@ export const MeterManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meters'] });
       setEditingMeter(null);
+      toast({
+        title: "Success",
+        description: "Meter updated successfully",
+      });
     },
   });
 
@@ -95,14 +90,18 @@ export const MeterManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meters'] });
+      toast({
+        title: "Success",
+        description: "Meter deleted successfully",
+      });
     },
   });
 
-  const handleCreateMeter = async (data: any) => {
+  const handleCreateMeter = async (data: Partial<Meter>) => {
     await createMeterMutation.mutateAsync(data);
   };
 
-  const handleUpdateMeter = async (data: any) => {
+  const handleUpdateMeter = async (data: Partial<Meter>) => {
     await updateMeterMutation.mutateAsync(data);
   };
 
@@ -124,15 +123,7 @@ export const MeterManagement = () => {
         <CardContent>
           <MeterForm
             mode={editingMeter ? 'edit' : 'create'}
-            initialData={editingMeter ? {
-              qrCode: editingMeter.qr_code,
-              longitude: editingMeter.longitude,
-              latitude: editingMeter.latitude,
-              enabled: editingMeter.is_enabled,
-              secretWord: editingMeter.secret_word,
-              tableName: editingMeter.table_name,
-              unitRate: editingMeter.unit_rate,
-            } : undefined}
+            initialData={editingMeter}
             onSubmit={editingMeter ? handleUpdateMeter : handleCreateMeter}
           />
         </CardContent>

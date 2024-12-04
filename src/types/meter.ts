@@ -4,14 +4,10 @@ export interface Meter {
   longitude: number;
   latitude: number;
   is_enabled: boolean;
+  secret_word: string;
+  table_name: string;
+  unit_rate: number;
   consumer_id?: number;
-  location?: string;
-  billing_settings?: {
-    billing_rate: number;
-    reading_due_day: number;
-    payment_grace_period: number;
-  };
-  is_settings?: boolean;
   created_at: string;
   updated_at: string;
 }

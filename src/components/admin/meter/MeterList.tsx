@@ -2,17 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface Meter {
-  id: string;
-  qr_code: string;
-  longitude: number;
-  latitude: number;
-  is_enabled: boolean;
-  table_name: string;
-  unit_rate: number;
-  consumer_id?: number;
-}
+import type { Meter } from "@/types/meter";
 
 interface MeterListProps {
   meters: Meter[];
@@ -51,7 +41,7 @@ export const MeterList = ({ meters, onEdit, onDelete, isLoading }: MeterListProp
             </TableCell>
             <TableCell>${meter.unit_rate.toFixed(2)}/unit</TableCell>
             <TableCell>
-              <Badge variant={meter.is_enabled ? "success" : "secondary"}>
+              <Badge variant={meter.is_enabled ? "default" : "secondary"}>
                 {meter.is_enabled ? "Active" : "Disabled"}
               </Badge>
             </TableCell>
