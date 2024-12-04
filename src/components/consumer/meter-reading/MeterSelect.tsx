@@ -1,8 +1,8 @@
-import { Meter } from "@/types";
-import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Meter } from "@/types";
 
-interface MeterSelectProps {
+export interface MeterSelectProps {
   value: string;
   onChange: (value: string) => void;
   meters: Meter[];
@@ -20,13 +20,12 @@ export const MeterSelect = ({ value, onChange, meters }: MeterSelectProps) => {
           <SelectContent>
             {meters.map((meter) => (
               <SelectItem key={meter.id} value={meter.id}>
-                {meter.qr_code} - {meter.table_name || 'Unnamed Meter'}
+                {meter.qr_code}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </FormControl>
-      <FormMessage />
     </FormItem>
   );
 };

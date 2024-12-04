@@ -19,7 +19,6 @@ export const ReadingsHistory = ({ readings }: ReadingsHistoryProps) => {
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
-              <TableHead>Meter</TableHead>
               <TableHead>Reading</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
@@ -30,10 +29,9 @@ export const ReadingsHistory = ({ readings }: ReadingsHistoryProps) => {
                 <TableCell>
                   {format(new Date(reading.created_at), 'MMM dd, yyyy')}
                 </TableCell>
-                <TableCell>{reading.meter?.qr_code}</TableCell>
                 <TableCell>{reading.reading}</TableCell>
                 <TableCell>
-                  <Badge variant={reading.validated ? "success" : "warning"}>
+                  <Badge variant={reading.validated ? "default" : "destructive"}>
                     {reading.validated ? "Validated" : "Pending"}
                   </Badge>
                 </TableCell>
@@ -41,7 +39,7 @@ export const ReadingsHistory = ({ readings }: ReadingsHistoryProps) => {
             ))}
             {readings.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   No readings found
                 </TableCell>
               </TableRow>
