@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const settingsSchema = z.object({
   billing_rate: z.number().min(0, "Billing rate must be positive"),
@@ -25,15 +26,40 @@ const SystemSettings = () => {
     }
   });
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error fetching settings:', error);
+        return;
+      }
+
+      if (data) {
+        form.reset({
+          billing_rate: data.billing_rate,
+          reading_due_day: data.reading_due_day,
+          payment_grace_period: data.payment_grace_period
+        });
+      }
+    };
+
+    fetchSettings();
+  }, [form]);
+
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     try {
       const { error } = await supabase
         .from('system_settings')
         .upsert({
-          id: 1, // Single row for system settings
+          id: 1,
           billing_rate: data.billing_rate,
           reading_due_day: data.reading_due_day,
-          payment_grace_period: data.payment_grace_period
+          payment_grace_period: data.payment_grace_period,
+          updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -43,6 +69,7 @@ const SystemSettings = () => {
         description: "System settings have been updated successfully"
       });
     } catch (error) {
+      console.error('Error updating settings:', error);
       toast({
         title: "Error",
         description: "Failed to update system settings",

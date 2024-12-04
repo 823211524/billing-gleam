@@ -281,6 +281,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          id: number
+          billing_rate: number
+          reading_due_day: number
+          payment_grace_period: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          billing_rate: number
+          reading_due_day: number
+          payment_grace_period: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          billing_rate?: number
+          reading_due_day?: number
+          payment_grace_period?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -360,10 +387,10 @@ export type TablesUpdate<
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
     ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+      Update: infer U
+    }
+    ? U
+    : never
     : never
 
 export type Enums<
