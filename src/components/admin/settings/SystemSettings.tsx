@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,17 @@ export const SystemSettings = () => {
 
   const handleSave = async () => {
     try {
+      // Store settings in the meters table with a special flag
       const { error } = await supabase
-        .from('system_settings')
-        .upsert({
-          billing_rate: settings.billingRate,
-          reading_due_day: settings.readingDueDay,
-          payment_grace_period: settings.paymentGracePeriod,
-        });
+        .from('meters')
+        .update({
+          billing_settings: {
+            billing_rate: settings.billingRate,
+            reading_due_day: settings.readingDueDay,
+            payment_grace_period: settings.paymentGracePeriod,
+          }
+        })
+        .eq('is_settings', true);
 
       if (error) throw error;
 
