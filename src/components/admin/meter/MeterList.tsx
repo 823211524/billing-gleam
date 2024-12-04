@@ -1,57 +1,63 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface Meter {
   id: string;
-  secretWord: string;
-  tableName: string;
-  enabled: boolean;
-  dateOfChange: string;
+  qr_code: string;
+  longitude: number;
+  latitude: number;
+  is_enabled: boolean;
+  table_name: string;
+  unit_rate: number;
+  consumer_id?: number;
 }
 
 interface MeterListProps {
   meters: Meter[];
   onEdit: (meter: Meter) => void;
   onDelete: (meterId: string) => Promise<void>;
+  isLoading: boolean;
 }
 
-export const MeterList = ({ meters, onEdit, onDelete }: MeterListProps) => {
-  const { toast } = useToast();
+export const MeterList = ({ meters, onEdit, onDelete, isLoading }: MeterListProps) => {
+  if (isLoading) {
+    return <div className="text-center py-4">Loading meters...</div>;
+  }
 
-  const handleDelete = async (meterId: string) => {
-    try {
-      await onDelete(meterId);
-      toast({
-        title: "Meter deleted",
-        description: "The meter has been removed from the system",
-      });
-    } catch (error) {
-      toast({
-        title: "Error deleting meter",
-        description: "This meter might be in use by a consumer",
-        variant: "destructive",
-      });
-    }
-  };
+  if (meters.length === 0) {
+    return <div className="text-center py-4">No meters found</div>;
+  }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Table Name</TableHead>
+          <TableHead>QR Code</TableHead>
+          <TableHead>Location</TableHead>
+          <TableHead>Unit Rate</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Last Modified</TableHead>
+          <TableHead>Consumer</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {meters.map((meter) => (
           <TableRow key={meter.id}>
-            <TableCell>{meter.tableName}</TableCell>
-            <TableCell>{meter.enabled ? "Enabled" : "Disabled"}</TableCell>
-            <TableCell>{new Date(meter.dateOfChange).toLocaleDateString()}</TableCell>
+            <TableCell>{meter.qr_code}</TableCell>
+            <TableCell>
+              {meter.longitude.toFixed(6)}, {meter.latitude.toFixed(6)}
+            </TableCell>
+            <TableCell>${meter.unit_rate.toFixed(2)}/unit</TableCell>
+            <TableCell>
+              <Badge variant={meter.is_enabled ? "success" : "secondary"}>
+                {meter.is_enabled ? "Active" : "Disabled"}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              {meter.consumer_id ? "Assigned" : "Unassigned"}
+            </TableCell>
             <TableCell className="text-right space-x-2">
               <Button
                 variant="outline"
@@ -63,7 +69,7 @@ export const MeterList = ({ meters, onEdit, onDelete }: MeterListProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDelete(meter.id)}
+                onClick={() => onDelete(meter.id)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

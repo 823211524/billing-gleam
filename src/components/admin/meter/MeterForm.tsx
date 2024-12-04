@@ -7,13 +7,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 
 const meterSchema = z.object({
+  qrCode: z.string().min(1, "QR code is required"),
   secretWord: z.string().min(1, "Secret word is required"),
   tableName: z.string().min(1, "Table name is required"),
+  longitude: z.number().min(-180).max(180),
+  latitude: z.number().min(-90).max(90),
   enabled: z.boolean(),
-  dateOfChange: z.string(),
+  unitRate: z.number().min(0, "Unit rate must be positive"),
 });
 
 type MeterFormData = z.infer<typeof meterSchema>;
@@ -29,10 +32,13 @@ export const MeterForm = ({ initialData, onSubmit, mode }: MeterFormProps) => {
   const form = useForm<MeterFormData>({
     resolver: zodResolver(meterSchema),
     defaultValues: initialData || {
+      qrCode: "",
       secretWord: "",
       tableName: "",
+      longitude: 0,
+      latitude: 0,
       enabled: true,
-      dateOfChange: new Date().toISOString().split('T')[0],
+      unitRate: 0,
     },
   });
 
@@ -56,6 +62,81 @@ export const MeterForm = ({ initialData, onSubmit, mode }: MeterFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="qrCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>QR Code</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormDescription>Unique identifier for the meter</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="longitude"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Longitude</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.000001"
+                    {...field}
+                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="latitude"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Latitude</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.000001"
+                    {...field}
+                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="unitRate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Unit Rate</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  step="0.01"
+                  {...field}
+                  onChange={e => field.onChange(parseFloat(e.target.value))}
+                />
+              </FormControl>
+              <FormDescription>Cost per unit for billing calculations</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="secretWord"
@@ -96,20 +177,6 @@ export const MeterForm = ({ initialData, onSubmit, mode }: MeterFormProps) => {
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="dateOfChange"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Date of Change</FormLabel>
-              <FormControl>
-                <Input {...field} type="date" />
-              </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />

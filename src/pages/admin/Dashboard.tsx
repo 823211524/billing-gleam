@@ -29,12 +29,13 @@ const AdminDashboard = () => {
     }
   });
 
-  const { data: totalMeters = 0 } = useQuery({
-    queryKey: ['totalMeters'],
+  const { data: activeMeters = 0 } = useQuery({
+    queryKey: ['activeMeters'],
     queryFn: async () => {
       const { count, error } = await supabase
         .from('meters')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('is_enabled', true);
       
       if (error) throw error;
       return count || 0;
@@ -88,7 +89,7 @@ const AdminDashboard = () => {
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">{totalMeters}</div>
+                    <div className="text-2xl font-bold">{activeMeters}</div>
                     <div className="text-sm text-gray-500">Active Meters</div>
                   </CardContent>
                 </Card>
