@@ -11,18 +11,54 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Reading } from "@/types";
 import { Check, X, Image } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ReadingValidation = () => {
   const { toast } = useToast();
-  const [readings] = useState<Reading[]>([]); // TODO: Replace with actual API data
+  const queryClient = useQueryClient();
 
-  const handleValidate = (readingId: number, validated: boolean) => {
-    // TODO: Implement actual validation
-    toast({
-      title: validated ? "Reading validated" : "Reading rejected",
-      description: validated ? "The reading has been approved" : "The reading has been rejected"
-    });
-  };
+  const { data: readings = [], isLoading } = useQuery({
+    queryKey: ['readings', 'unvalidated'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('readings')
+        .select('*')
+        .eq('validated', false);
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const validateMutation = useMutation({
+    mutationFn: async ({ readingId, validated }: { readingId: number, validated: boolean }) => {
+      const { error } = await supabase
+        .from('readings')
+        .update({ 
+          validated,
+          validated_by_admin: validated,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', readingId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readings'] });
+      toast({
+        title: "Success",
+        description: "Reading status updated successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <div className="space-y-4">
@@ -38,7 +74,13 @@ export const ReadingValidation = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {readings.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  Loading readings...
+                </TableCell>
+              </TableRow>
+            ) : readings.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
                   No readings pending validation
@@ -47,12 +89,14 @@ export const ReadingValidation = () => {
             ) : (
               readings.map((reading) => (
                 <TableRow key={reading.id}>
-                  <TableCell>{reading.meterId}</TableCell>
+                  <TableCell>{reading.meter_id}</TableCell>
                   <TableCell>{reading.reading}</TableCell>
                   <TableCell>{`${reading.month}/${reading.year}`}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <Image className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={reading.image_url} target="_blank" rel="noopener noreferrer">
+                        <Image className="h-4 w-4" />
+                      </a>
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -60,14 +104,14 @@ export const ReadingValidation = () => {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleValidate(reading.id, true)}
+                        onClick={() => validateMutation.mutate({ readingId: reading.id, validated: true })}
                       >
                         <Check className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleValidate(reading.id, false)}
+                        onClick={() => validateMutation.mutate({ readingId: reading.id, validated: false })}
                       >
                         <X className="h-4 w-4" />
                       </Button>

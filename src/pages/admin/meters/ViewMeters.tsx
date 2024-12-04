@@ -1,15 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MeterManagement } from "@/components/admin/meter/MeterManagement";
 
 const ViewMeters = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>View Meters</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p>Meter management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <div className="container mx-auto py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Meters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MeterManagement />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

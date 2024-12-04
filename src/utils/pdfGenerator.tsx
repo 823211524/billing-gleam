@@ -93,15 +93,11 @@ export const BillDownloadLink: React.FC<BillPDFProps> = (props) => (
   <PDFDownloadLink
     document={<BillPDF {...props} />}
     fileName={`bill-${props.reading.meter_id}-${props.reading.month}-${props.reading.year}.pdf`}
-    style={{
-      textDecoration: 'none',
-      padding: '8px 16px',
-      color: 'inherit',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-    }}
   >
-    {({ loading }) => (loading ? 'Generating PDF...' : 'Download PDF')}
+    {({ loading }) => (
+      <span className="inline-flex items-center gap-2">
+        {loading ? 'Generating PDF...' : 'Download PDF'}
+      </span>
+    )}
   </PDFDownloadLink>
 );

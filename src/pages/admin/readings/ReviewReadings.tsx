@@ -1,15 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReadingValidation } from "@/components/admin/ReadingValidation";
 
 const ReviewReadings = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Review Readings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p>Reading review interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <div className="container mx-auto py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Review Readings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReadingValidation />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
