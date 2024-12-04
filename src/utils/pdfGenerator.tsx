@@ -89,15 +89,14 @@ export const BillViewer: React.FC<BillPDFProps> = (props) => (
   </PDFViewer>
 );
 
-export const BillDownloadLink: React.FC<BillPDFProps> = (props) => (
+export const BillDownloadLink: React.FC<BillPDFProps & { className?: string }> = ({ className, ...props }) => (
   <PDFDownloadLink
     document={<BillPDF {...props} />}
     fileName={`bill-${props.reading.meter_id}-${props.reading.month}-${props.reading.year}.pdf`}
+    className={className}
   >
     {({ loading }) => (
-      <span className="inline-flex items-center gap-2">
-        {loading ? 'Generating PDF...' : 'Download PDF'}
-      </span>
+      loading ? 'Generating PDF...' : 'Download PDF'
     )}
   </PDFDownloadLink>
 );
