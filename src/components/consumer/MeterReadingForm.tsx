@@ -5,11 +5,12 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Upload, Camera, Loader2 } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { createWorker } from 'tesseract.js';
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { ImageCapture } from "./meter-reading/ImageCapture";
+import { OCRProcessor } from "./meter-reading/OCRProcessor";
 
 const formSchema = z.object({
   meterReading: z.string().min(1, "Meter reading is required"),
@@ -21,6 +22,7 @@ export const MeterReadingForm = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const ocrProcessor = new OCRProcessor();
 
   const { data: meters = [] } = useQuery({
     queryKey: ['userMeters'],
@@ -46,23 +48,18 @@ export const MeterReadingForm = () => {
     },
   });
 
-  const processImage = async (file: File) => {
+  const handleImageCapture = async (file: File, preview: string) => {
     setIsProcessing(true);
-    try {
-      const worker = await createWorker();
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
-      
-      const { data: { text } } = await worker.recognize(file);
-      await worker.terminate();
+    setImagePreview(preview);
 
-      // Extract numbers from the text
-      const numbers = text.match(/\d+(\.\d+)?/g);
-      if (numbers && numbers.length > 0) {
-        form.setValue('meterReading', numbers[0]);
+    try {
+      const reading = await ocrProcessor.processImage(file);
+      
+      if (reading) {
+        form.setValue('meterReading', reading);
         toast({
           title: "Reading detected",
-          description: `Detected reading: ${numbers[0]}. Please verify this value.`,
+          description: `Detected reading: ${reading}. Please verify this value.`,
         });
       } else {
         toast({
@@ -79,49 +76,7 @@ export const MeterReadingForm = () => {
       });
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-
-      // Create preview
-      const preview = URL.createObjectURL(file);
-      setImagePreview(preview);
-
-      // Process image with OCR
-      await processImage(file);
-
-      // Get location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            console.log("Location:", {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => {
-            toast({
-              title: "Location error",
-              description: "Could not get location",
-              variant: "destructive",
-            });
-          }
-        );
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to process image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
+      await ocrProcessor.cleanup();
     }
   };
 
@@ -200,22 +155,11 @@ export const MeterReadingForm = () => {
           />
 
           <div className="flex flex-col items-center gap-4">
-            <Button
-              type="button"
-              disabled={isUploading || isProcessing}
-              className="w-full md:w-auto"
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.capture = 'environment';
-                input.onchange = (e) => handlePhotoCapture(e as any);
-                input.click();
-              }}
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              {isUploading ? "Uploading..." : isProcessing ? "Processing..." : "Take Meter Photo"}
-            </Button>
+            <ImageCapture
+              onImageCapture={handleImageCapture}
+              isUploading={isUploading}
+              isProcessing={isProcessing}
+            />
 
             {imagePreview && (
               <div className="w-full max-w-md">
