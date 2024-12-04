@@ -5,37 +5,86 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Upload, Camera } from "lucide-react";
+import { Upload, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { createWorker } from 'tesseract.js';
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const formSchema = z.object({
   meterReading: z.string().min(1, "Meter reading is required"),
+  meterId: z.string().min(1, "Meter selection is required")
 });
 
 export const MeterReadingForm = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const { data: meters = [] } = useQuery({
+    queryKey: ['userMeters'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from('meters')
+        .select('*')
+        .eq('consumer_id', user.id);
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       meterReading: "",
+      meterId: ""
     },
   });
+
+  const processImage = async (file: File) => {
+    setIsProcessing(true);
+    try {
+      const worker = await createWorker();
+      await worker.loadLanguage('eng');
+      await worker.initialize('eng');
+      
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
+
+      // Extract numbers from the text
+      const numbers = text.match(/\d+(\.\d+)?/g);
+      if (numbers && numbers.length > 0) {
+        form.setValue('meterReading', numbers[0]);
+        toast({
+          title: "Reading detected",
+          description: `Detected reading: ${numbers[0]}. Please verify this value.`,
+        });
+      } else {
+        toast({
+          title: "No reading detected",
+          description: "Please enter the reading manually",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error processing image",
+        description: "Failed to extract reading from image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    if (!navigator.geolocation) {
-      toast({
-        title: "Error",
-        description: "Your device doesn't support location services",
-        variant: "destructive",
-      });
-      return;
-    }
 
     try {
       setIsUploading(true);
@@ -44,30 +93,69 @@ export const MeterReadingForm = () => {
       const preview = URL.createObjectURL(file);
       setImagePreview(preview);
 
+      // Process image with OCR
+      await processImage(file);
+
       // Get location
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
-      });
-
-      // TODO: Upload to storage
-      console.log("Photo:", file);
-      console.log("Location:", {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-
-      toast({
-        title: "Success",
-        description: "Photo captured successfully. Please enter the meter reading.",
-      });
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            console.log("Location:", {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => {
+            toast({
+              title: "Location error",
+              description: "Could not get location",
+              variant: "destructive",
+            });
+          }
+        );
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to capture photo",
+        description: "Failed to process image",
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from('readings')
+        .insert({
+          meter_id: data.meterId,
+          reading: parseFloat(data.meterReading),
+          image_url: imagePreview || '',
+          user_id: user.id,
+          year: new Date().getFullYear(),
+          month: new Date().getMonth() + 1
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Reading submitted successfully",
+      });
+
+      form.reset();
+      setImagePreview(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit reading",
+        variant: "destructive",
+      });
     }
   };
 
@@ -86,10 +174,35 @@ export const MeterReadingForm = () => {
       </div>
 
       <Form {...form}>
-        <form className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="meterId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Select Meter</FormLabel>
+                <FormControl>
+                  <select
+                    className="w-full p-2 border rounded"
+                    {...field}
+                  >
+                    <option value="">Select a meter</option>
+                    {meters.map((meter) => (
+                      <option key={meter.id} value={meter.id}>
+                        {meter.qr_code}
+                      </option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="flex flex-col items-center gap-4">
             <Button
-              disabled={isUploading}
+              type="button"
+              disabled={isUploading || isProcessing}
               className="w-full md:w-auto"
               onClick={() => {
                 const input = document.createElement('input');
@@ -101,7 +214,7 @@ export const MeterReadingForm = () => {
               }}
             >
               <Camera className="w-4 h-4 mr-2" />
-              {isUploading ? "Capturing..." : "Take Meter Photo"}
+              {isUploading ? "Uploading..." : isProcessing ? "Processing..." : "Take Meter Photo"}
             </Button>
 
             {imagePreview && (
@@ -132,9 +245,22 @@ export const MeterReadingForm = () => {
             )}
           />
 
-          <Button type="submit" className="w-full">
-            <Upload className="w-4 h-4 mr-2" />
-            Submit Reading
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isUploading || isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Submit Reading
+              </>
+            )}
           </Button>
         </form>
       </Form>
