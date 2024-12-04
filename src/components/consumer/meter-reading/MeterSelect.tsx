@@ -1,31 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Meter } from "@/types";
 import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MeterSelectProps {
   value: string;
   onChange: (value: string) => void;
+  meters: Meter[];
 }
 
-export const MeterSelect = ({ value, onChange }: MeterSelectProps) => {
-  const { data: meters = [], isLoading } = useQuery({
-    queryKey: ['userMeters'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from('meters')
-        .select('*')
-        .eq('consumer_id', parseInt(user.id))
-        .eq('is_enabled', true);
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
+export const MeterSelect = ({ value, onChange, meters }: MeterSelectProps) => {
   return (
     <FormItem>
       <FormLabel>Select Meter</FormLabel>
