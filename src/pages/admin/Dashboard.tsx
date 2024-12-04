@@ -1,46 +1,11 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  useEffect(() => {
-    const checkAdminAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/admin/login");
-        return;
-      }
-
-      // Verify admin role
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('role')
-        .eq('email', session.user.email)
-        .single();
-
-      if (error || userData?.role !== 'ADMIN') {
-        toast({
-          variant: "destructive",
-          title: "Unauthorized",
-          description: "You don't have permission to access this page",
-        });
-        await supabase.auth.signOut();
-        navigate("/admin/login");
-      }
-    };
-
-    checkAdminAuth();
-  }, [navigate, toast]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     navigate("/admin/login");
   };
 
