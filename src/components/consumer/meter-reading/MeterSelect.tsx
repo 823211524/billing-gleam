@@ -9,7 +9,7 @@ interface MeterSelectProps {
 }
 
 export const MeterSelect = ({ value, onChange }: MeterSelectProps) => {
-  const { data: meters = [] } = useQuery({
+  const { data: meters = [], isLoading } = useQuery({
     queryKey: ['userMeters'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -18,11 +18,11 @@ export const MeterSelect = ({ value, onChange }: MeterSelectProps) => {
       const { data, error } = await supabase
         .from('meters')
         .select('*')
-        .eq('consumer_id', user.id)
+        .eq('consumer_id', parseInt(user.id))
         .eq('is_enabled', true);
       
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
@@ -37,7 +37,7 @@ export const MeterSelect = ({ value, onChange }: MeterSelectProps) => {
           <SelectContent>
             {meters.map((meter) => (
               <SelectItem key={meter.id} value={meter.id}>
-                {meter.qr_code} - {meter.location || 'No location set'}
+                {meter.qr_code} - {meter.table_name || 'Unnamed Meter'}
               </SelectItem>
             ))}
           </SelectContent>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Form, FormField } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -74,7 +75,7 @@ export const MeterReadingForm = () => {
           meter_id: data.meterId,
           reading: parseFloat(data.meterReading),
           image_url: imagePreview || '',
-          user_id: user.id,
+          user_id: parseInt(user.id),
           year: new Date().getFullYear(),
           month: new Date().getMonth() + 1
         });
