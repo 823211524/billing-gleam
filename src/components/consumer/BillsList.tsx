@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Bill } from '@/types';
-import { BillDownloadLink } from '@/utils/pdfGenerator';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -76,11 +75,14 @@ export const BillsList = () => {
               </div>
               <Button variant="outline" size="sm" className="ml-4">
                 <FileText className="h-4 w-4 mr-2" />
-                <BillDownloadLink 
-                  bill={bill} 
-                  reading={bill.reading} 
+                <a 
+                  href={bill.pdf_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
                   className="no-underline hover:no-underline"
-                />
+                >
+                  View Bill
+                </a>
               </Button>
             </div>
           </CardContent>
