@@ -1,42 +1,60 @@
 export interface User {
   id: number;
-  givenName: string;
-  surname: string;
   email: string;
+  given_name: string;
+  surname: string;
   address: string;
   role: 'ADMIN' | 'CONSUMER';
-  isEnabled: boolean;
-  disabledAt: Date | null;
-  secretWord?: string;
+  is_enabled: boolean;
+  disabled_at: string | null;
+  secret_word?: string;
+  table_name?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Meter {
   id: string;
+  qr_code: string;
   longitude: number;
   latitude: number;
-  qrCode: string;
-  consumerId?: number;
-  isEnabled: boolean;
+  is_enabled: boolean;
+  secret_word?: string;
+  table_name?: string;
+  consumer_id?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Reading {
   id: number;
-  meterId: string;
+  meter_id: string;
   reading: number;
-  imageUrl: string;
+  image_url: string;
+  image_location?: any;
+  ocr_confidence?: number;
+  manual_input: boolean;
   validated: boolean;
-  validatedByConsumer: boolean;
-  validatedByAdmin: boolean;
+  validated_by_consumer: boolean;
+  validated_by_admin: boolean;
+  validation_errors?: string[];
   year: number;
   month: number;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
 }
 
 export interface Bill {
   id: number;
-  readingId: number;
+  reading_id: number;
   amount: number;
   consumption: number;
-  pdfUrl: string;
+  pdf_url: string;
   paid: boolean;
-  dueDate: Date;
+  due_date: string;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  reading?: Reading;
 }

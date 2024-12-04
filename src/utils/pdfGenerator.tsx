@@ -1,25 +1,36 @@
-import { Reading, Bill } from '@/types';
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import React from 'react';
+import { Reading, Bill } from '@/types';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 
 const styles = StyleSheet.create({
   page: {
     padding: 30,
+    fontFamily: 'Helvetica',
   },
   title: {
     fontSize: 24,
     marginBottom: 20,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 10,
   },
   label: {
     fontSize: 12,
-    color: '#666',
+    color: '#666666',
   },
   value: {
     fontSize: 14,
     marginBottom: 5,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    right: 30,
+    textAlign: 'center',
+    fontSize: 10,
+    color: '#666666',
   },
 });
 
@@ -36,7 +47,7 @@ const BillPDF: React.FC<BillPDFProps> = ({ reading, bill }) => (
         
         <View style={styles.section}>
           <Text style={styles.label}>Meter ID</Text>
-          <Text style={styles.value}>{reading.meterId}</Text>
+          <Text style={styles.value}>{reading.meter_id}</Text>
         </View>
 
         <View style={styles.section}>
@@ -61,24 +72,35 @@ const BillPDF: React.FC<BillPDFProps> = ({ reading, bill }) => (
 
         <View style={styles.section}>
           <Text style={styles.label}>Due Date</Text>
-          <Text style={styles.value}>{new Date(bill.dueDate).toLocaleDateString()}</Text>
+          <Text style={styles.value}>{new Date(bill.due_date).toLocaleDateString()}</Text>
+        </View>
+
+        <View style={styles.footer}>
+          <Text>Generated on {new Date().toLocaleDateString()}</Text>
         </View>
       </View>
     </Page>
   </Document>
 );
 
-export const generateBillPDF = async (reading: Reading, bill: Bill): Promise<Blob> => {
-  return new Promise((resolve) => {
-    const blob = new Blob([<BillPDF reading={reading} bill={bill} />], { type: 'application/pdf' });
-    resolve(blob);
-  });
-};
+export const BillViewer: React.FC<BillPDFProps> = (props) => (
+  <PDFViewer style={{ width: '100%', height: '500px' }}>
+    <BillPDF {...props} />
+  </PDFViewer>
+);
 
-export const BillDownloadLink: React.FC<BillPDFProps> = ({ reading, bill }) => (
+export const BillDownloadLink: React.FC<BillPDFProps> = (props) => (
   <PDFDownloadLink
-    document={<BillPDF reading={reading} bill={bill} />}
-    fileName={`bill-${reading.meterId}-${reading.month}-${reading.year}.pdf`}
+    document={<BillPDF {...props} />}
+    fileName={`bill-${props.reading.meter_id}-${props.reading.month}-${props.reading.year}.pdf`}
+    style={{
+      textDecoration: 'none',
+      padding: '8px 16px',
+      color: 'inherit',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+    }}
   >
     {({ loading }) => (loading ? 'Generating PDF...' : 'Download PDF')}
   </PDFDownloadLink>
