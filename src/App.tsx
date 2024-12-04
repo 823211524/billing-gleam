@@ -9,6 +9,13 @@ import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ConsumerRegister from "./pages/consumer/Register";
 import ConsumerDashboard from "./pages/consumer/Dashboard";
+import AdminLayout from "./components/admin/AdminLayout";
+import ManageUsers from "./pages/admin/users/ManageUsers";
+import ViewMeters from "./pages/admin/meters/ViewMeters";
+import ReviewReadings from "./pages/admin/readings/ReviewReadings";
+import GenerateBills from "./pages/admin/bills/GenerateBills";
+import SystemSettings from "./pages/admin/settings/SystemSettings";
+import ViewReports from "./pages/admin/reports/ViewReports";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +32,15 @@ const App = () => (
             <Route path="/consumer/register" element={<ConsumerRegister />} />
             <Route path="/consumer/dashboard" element={<ConsumerDashboard />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<ManageUsers />} />
+              <Route path="meters" element={<ViewMeters />} />
+              <Route path="readings" element={<ReviewReadings />} />
+              <Route path="bills" element={<GenerateBills />} />
+              <Route path="settings" element={<SystemSettings />} />
+              <Route path="reports" element={<ViewReports />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </div>

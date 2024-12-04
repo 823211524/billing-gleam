@@ -5,30 +5,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    navigate("/admin/login");
-  };
+  const menuItems = [
+    { title: "Manage Users", path: "/admin/users" },
+    { title: "View Meters", path: "/admin/meters" },
+    { title: "Review Readings", path: "/admin/readings" },
+    { title: "Generate Bills", path: "/admin/bills" },
+    { title: "System Settings", path: "/admin/settings" },
+    { title: "View Reports", path: "/admin/reports" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <Card className="mx-auto max-w-4xl">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="text-2xl">Admin Dashboard</CardTitle>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
             <section className="space-y-4">
               <h2 className="text-xl font-semibold">Quick Actions</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Button className="h-24 text-lg">Manage Users</Button>
-                <Button className="h-24 text-lg">View Meters</Button>
-                <Button className="h-24 text-lg">Review Readings</Button>
-                <Button className="h-24 text-lg">Generate Bills</Button>
-                <Button className="h-24 text-lg">System Settings</Button>
-                <Button className="h-24 text-lg">View Reports</Button>
+                {menuItems.map((item) => (
+                  <Button
+                    key={item.path}
+                    className="h-24 text-lg"
+                    onClick={() => navigate(item.path)}
+                  >
+                    {item.title}
+                  </Button>
+                ))}
               </div>
             </section>
             
