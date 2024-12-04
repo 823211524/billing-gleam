@@ -95,8 +95,6 @@ export const BillDownloadLink: React.FC<BillPDFProps & { className?: string }> =
     fileName={`bill-${props.reading.meter_id}-${props.reading.month}-${props.reading.year}.pdf`}
     className={className}
   >
-    {({ loading }) => (
-      <span>{loading ? 'Generating PDF...' : 'Download PDF'}</span>
-    )}
+    {({ loading }) => loading ? 'Generating PDF...' : 'Download PDF'}
   </PDFDownloadLink>
 );

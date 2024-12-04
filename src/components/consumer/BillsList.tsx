@@ -5,16 +5,21 @@ import { BillDownloadLink } from '@/utils/pdfGenerator';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 export const BillsList = () => {
-  const { data: bills, isLoading } = useQuery<Bill[]>({
+  const { toast } = useToast();
+  const { data: bills, isLoading, error } = useQuery({
     queryKey: ['bills'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bills')
         .select(`
           *,
-          reading:readings (*)
+          reading:readings (
+            *,
+            meter:meters (*)
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -23,8 +28,22 @@ export const BillsList = () => {
     },
   });
 
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load bills",
+      variant: "destructive",
+    });
+  }
+
   if (isLoading) {
-    return <div>Loading bills...</div>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-gray-500">Loading bills...</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!bills?.length) {
@@ -57,9 +76,11 @@ export const BillsList = () => {
               </div>
               <Button variant="outline" size="sm" className="ml-4">
                 <FileText className="h-4 w-4 mr-2" />
-                <a href={bill.pdf_url} target="_blank" rel="noopener noreferrer">
-                  View PDF
-                </a>
+                <BillDownloadLink 
+                  bill={bill} 
+                  reading={bill.reading} 
+                  className="no-underline hover:no-underline"
+                />
               </Button>
             </div>
           </CardContent>
