@@ -1,4 +1,4 @@
-import { Reading } from '../types';
+import { Reading } from '@prisma/client';
 
 export const calculateBillAmount = (reading: number, rate: number = 0.15) => {
   return reading * rate;
