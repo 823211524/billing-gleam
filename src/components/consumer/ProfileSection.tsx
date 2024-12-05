@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,13 +12,59 @@ interface ProfileSectionProps {
 
 export const ProfileSection = ({ user }: ProfileSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    given_name: user?.given_name || '',
-    surname: user?.surname || '',
-    email: user?.email || '',
-    address: user?.address || ''
+    given_name: '',
+    surname: '',
+    email: '',
+    address: ''
   });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        if (!authUser?.id) {
+          toast({
+            title: "Error",
+            description: "No authenticated user found",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+
+        if (error) throw error;
+
+        if (userData) {
+          setFormData({
+            given_name: userData.given_name || '',
+            surname: userData.surname || '',
+            email: userData.email || '',
+            address: userData.address || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,6 +76,17 @@ export const ProfileSection = ({ user }: ProfileSectionProps) => {
 
   const handleSubmit = async () => {
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser?.id) {
+        toast({
+          title: "Error",
+          description: "No authenticated user found",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
@@ -37,7 +94,7 @@ export const ProfileSection = ({ user }: ProfileSectionProps) => {
           surname: formData.surname,
           address: formData.address,
         })
-        .eq('id', user?.id);
+        .eq('id', authUser.id);
 
       if (error) throw error;
 
@@ -47,6 +104,7 @@ export const ProfileSection = ({ user }: ProfileSectionProps) => {
       });
       setIsEditing(false);
     } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "Failed to update profile",
@@ -54,6 +112,18 @@ export const ProfileSection = ({ user }: ProfileSectionProps) => {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center h-48">
+            <p className="text-gray-500">Loading profile data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
