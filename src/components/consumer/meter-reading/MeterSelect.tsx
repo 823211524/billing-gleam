@@ -20,7 +20,7 @@ export const MeterSelect = ({ value, onChange, meters }: MeterSelectProps) => {
           <SelectContent>
             {meters.map((meter) => (
               <SelectItem key={meter.id} value={meter.id}>
-                {meter.table_name || meter.id}
+                {meter.qr_code}
               </SelectItem>
             ))}
           </SelectContent>

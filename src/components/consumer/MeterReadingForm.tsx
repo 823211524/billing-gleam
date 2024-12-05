@@ -11,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { ImageCapture } from "./meter-reading/ImageCapture";
 import { OCRProcessor } from "./meter-reading/OCRProcessor";
 import { MeterSelect } from "./meter-reading/MeterSelect";
-import { useConsumerData } from "@/hooks/useConsumerData";
 
 const formSchema = z.object({
   meterReading: z.string().min(1, "Meter reading is required"),
@@ -24,9 +23,6 @@ export const MeterReadingForm = () => {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const ocrProcessor = new OCRProcessor();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  const { meters } = useConsumerData(user?.id || 0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -109,11 +105,7 @@ export const MeterReadingForm = () => {
           control={form.control}
           name="meterId"
           render={({ field }) => (
-            <MeterSelect 
-              value={field.value} 
-              onChange={field.onChange}
-              meters={meters} 
-            />
+            <MeterSelect value={field.value} onChange={field.onChange} />
           )}
         />
 
