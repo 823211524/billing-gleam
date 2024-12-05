@@ -1,11 +1,26 @@
-import { Reading } from '../types';
+import { Reading } from '@/types';
 
-export const calculateBillAmount = (reading: number, rate: number = 0.15) => {
-  return reading * rate;
+interface BillCalculationResult {
+  amount: number;
+  consumption: number;
+  dueDate: Date;
+}
+
+export const calculateBill = (reading: Reading, unitRate: number = 0.15): BillCalculationResult => {
+  const consumption = reading.reading;
+  const amount = consumption * unitRate;
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + 30); // 30 days from now
+
+  return {
+    amount,
+    consumption,
+    dueDate
+  };
 };
 
-export const generateBillPDF = async (reading: Reading, amount: number) => {
-  // This would typically connect to a PDF generation service
-  // For now, we'll return a mock URL
-  return `https://example.com/bills/${reading.id}.pdf`;
+export const generateBillPDF = async (reading: Reading, billDetails: BillCalculationResult): Promise<string> => {
+  // This would connect to a PDF generation service
+  // For now, return a mock URL
+  return `https://storage.example.com/bills/${reading.id}.pdf`;
 };
