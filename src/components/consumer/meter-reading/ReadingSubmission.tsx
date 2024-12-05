@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { ImageCapture } from "./ImageCapture";
 import { OCRProcessor } from "./OCRProcessor";
+import { MeterSelect } from "./MeterSelect";
 import { validateMeterLocation } from "@/utils/meterValidation";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ReadingSubmission = () => {
   const [reading, setReading] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [selectedMeterId, setSelectedMeterId] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const ocrProcessor = new OCRProcessor();
@@ -48,6 +50,15 @@ export const ReadingSubmission = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedMeterId) {
+      toast({
+        title: "Error",
+        description: "Please select a meter",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -60,6 +71,7 @@ export const ReadingSubmission = () => {
       const { error } = await supabase.from('readings').insert({
         reading: readingValue,
         image_url: imageUrl,
+        meter_id: selectedMeterId,
         year: new Date().getFullYear(),
         month: new Date().getMonth() + 1,
         user_id: parseInt(user.id),
@@ -77,6 +89,7 @@ export const ReadingSubmission = () => {
       // Reset form
       setReading("");
       setImageUrl("");
+      setSelectedMeterId("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -93,6 +106,11 @@ export const ReadingSubmission = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <MeterSelect 
+            value={selectedMeterId} 
+            onChange={setSelectedMeterId} 
+          />
+
           <ImageCapture
             onImageCapture={handleImageCapture}
             isUploading={false}
@@ -127,7 +145,7 @@ export const ReadingSubmission = () => {
           <Button
             type="submit"
             className="w-full"
-            disabled={isProcessing || !reading || !imageUrl}
+            disabled={isProcessing || !reading || !imageUrl || !selectedMeterId}
           >
             Submit Reading
           </Button>

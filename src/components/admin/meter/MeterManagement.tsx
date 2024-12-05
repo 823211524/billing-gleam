@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Meter } from "@/types/meter";
+import { generateMeterQRCode } from "@/utils/qrCodeGenerator";
 
 export const MeterManagement = () => {
   const [editingMeter, setEditingMeter] = useState<Meter | null>(null);
@@ -27,10 +28,13 @@ export const MeterManagement = () => {
 
   const createMeterMutation = useMutation({
     mutationFn: async (data: Partial<Meter>) => {
+      // Generate QR code for the meter
+      const qrCode = await generateMeterQRCode(crypto.randomUUID());
+      
       const { error } = await supabase
         .from('meters')
         .insert([{
-          qr_code: data.qr_code,
+          qr_code: qrCode,
           longitude: data.longitude,
           latitude: data.latitude,
           is_enabled: data.is_enabled,
