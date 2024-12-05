@@ -10,7 +10,6 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 
 const meterSchema = z.object({
-  qrCode: z.string().min(1, "QR code is required"),
   secretWord: z.string().min(1, "Secret word is required"),
   tableName: z.string().min(1, "Table name is required"),
   longitude: z.number().min(-180).max(180),
@@ -32,7 +31,6 @@ export const MeterForm = ({ initialData, onSubmit, mode }: MeterFormProps) => {
   const form = useForm<MeterFormData>({
     resolver: zodResolver(meterSchema),
     defaultValues: initialData || {
-      qrCode: "",
       secretWord: "",
       tableName: "",
       longitude: 0,
@@ -62,21 +60,6 @@ export const MeterForm = ({ initialData, onSubmit, mode }: MeterFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="qrCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>QR Code</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription>Unique identifier for the meter</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
