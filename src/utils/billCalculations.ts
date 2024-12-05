@@ -1,12 +1,11 @@
-import { Reading } from "@/types";
+import { Reading } from '../types';
 
-export const calculateBill = (reading: number, unitRate: number = 1): number => {
-  return reading * unitRate;
+export const calculateBillAmount = (reading: number, rate: number = 0.15) => {
+  return reading * rate;
 };
 
-export const calculateBillAmount = calculateBill; // Alias for backward compatibility
-
-export const generateBillPDF = async (reading: Reading, amount: number): Promise<string> => {
-  // Mock implementation - replace with actual PDF generation
+export const generateBillPDF = async (reading: Reading, amount: number) => {
+  // This would typically connect to a PDF generation service
+  // For now, we'll return a mock URL
   return `https://example.com/bills/${reading.id}.pdf`;
 };
