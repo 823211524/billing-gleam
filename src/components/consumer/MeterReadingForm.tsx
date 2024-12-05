@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -24,9 +24,18 @@ export const MeterReadingForm = () => {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const ocrProcessor = new OCRProcessor();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  const { meters } = useConsumerData(user?.id || 0);
+  const [userId, setUserId] = useState<number>(0);
+  const { meters } = useConsumerData(userId);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        setUserId(parseInt(user.id));
+      }
+    };
+    fetchUser();
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
