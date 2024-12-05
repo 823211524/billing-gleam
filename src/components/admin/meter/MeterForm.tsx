@@ -10,7 +10,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 
 const meterSchema = z.object({
-  qrCode: z.string().optional(), // Made optional
+  qrCode: z.string().min(1, "QR code is required"),
   secretWord: z.string().min(1, "Secret word is required"),
   tableName: z.string().min(1, "Table name is required"),
   longitude: z.number().min(-180).max(180),
@@ -67,11 +67,11 @@ export const MeterForm = ({ initialData, onSubmit, mode }: MeterFormProps) => {
           name="qrCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>QR Code (Optional)</FormLabel>
+              <FormLabel>QR Code</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
-              <FormDescription>Optional identifier for the meter</FormDescription>
+              <FormDescription>Unique identifier for the meter</FormDescription>
               <FormMessage />
             </FormItem>
           )}

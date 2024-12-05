@@ -17,8 +17,8 @@ model User {
   role             UserRole  @default(CONSUMER)
   isEnabled        Boolean   @default(true)
   disabledAt       DateTime?
-  secretWord       String?   
-  tableName        String?   
+  secretWord       String?   // For admin authentication
+  tableName        String?   // For consumer's personal table name
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   meters           Meter[]
@@ -28,12 +28,12 @@ model User {
 
 model Meter {
   id          String    @id @default(uuid())
-  qrCode      String?   // Made optional by removing @unique and making it nullable
+  qrCode      String    @unique
   longitude   Float
   latitude    Float
   isEnabled   Boolean   @default(true)
-  secretWord  String?   
-  tableName   String?   
+  secretWord  String?   // For meter authentication
+  tableName   String?   // For meter-specific data
   consumer    User?     @relation(fields: [consumerId], references: [id])
   consumerId  Int?
   createdAt   DateTime  @default(now())
