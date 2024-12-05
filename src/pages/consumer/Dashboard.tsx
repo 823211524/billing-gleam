@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,30 +11,14 @@ import { ProfileSection } from "@/components/consumer/ProfileSection";
 import { ReadingsHistory } from "@/components/consumer/ReadingsHistory";
 import { useConsumerData } from "@/hooks/useConsumerData";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/types";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("meter-reading");
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setCurrentUser(userData);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  const { meters, readings, bills, isLoading } = useConsumerData(currentUser?.id || 0);
+  const { data: { user } } = await supabase.auth.getUser();
+  const { meters, readings, bills, isLoading } = useConsumerData(user?.id);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -45,7 +29,7 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  if (isLoading || !currentUser) {
+  if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
       Loading...
     </div>;
@@ -128,7 +112,7 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <MeterReadingForm />
+                <MeterReadingForm meters={meters} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -138,11 +122,19 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="bills">
-            <BillsList />
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Bills</CardTitle>
+                <CardDescription>View and download your electricity bills</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BillsList bills={bills} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="profile">
-            <ProfileSection user={currentUser} />
+            <ProfileSection user={user} />
           </TabsContent>
         </Tabs>
       </div>
